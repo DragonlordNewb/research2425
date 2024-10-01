@@ -1,4 +1,63 @@
-from sympy import *
+import sympy
+
+class CoordinateSystem:
+
+	x, x0, x1, x2, x3 = None, None, None, None, None
+	v, v0, v1, v2, v3 = None, None, None, None, None
+
+	def __init__(self, name0, name1, name2, name3):
+		self.x = sympy.symbols(" ".join([name0, name1, name2, name3]))
+		self.x0, self.x1, self.x2, self.x3 = self.x
+		self.v = sympy.symbols(" ".join(["v_" + name0, "v_" + name1, "v_" + name2, "v_" + name3]))
+		self.v0, self.v1, self.v2, self.v3 = self.v
+
+class MetricTensor:
+
+	coords: CoordinateSystem = None
+	tensor = None
+	tensor_inverse = None
+	tensor_derivatives = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
+	tensor_mixed_derivatives = [[[[None for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
+	tensor_inverse_derivatives = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
+	tensor_determinant = None
+	tensor_inverse_determinant = None
+
+	def __init__(self, coords: CoordinateSystem, metric: list[list["Expression"]]):
+		self.coords = coords
+		self.tensor = metric
+		self.tensor_inverse = sympy.Matrix(metric).inv().tolist()
+
+	def get_dd(self, i, j):
+		return self.tensor[i][j]
+
+	def get_uu(self, i, j):
+		if self.tensor_inverse is None:
+			self.tensor_inverse = sympy.Matrix(self.tensor).inv().tolist()
+		return self.tensor_inverse[i][j]
+
+	def getDerivative(self, mu: int, nu: int, wrt: sympy.Symbol) -> "Expression":
+		if self.tensor_derivatives[mu][nu][wrt] is None:
+			self.tensor_derivatives[mu][nu][wrt] = sympy.diff(self.tensor[mu][nu], self.coords.x[wrt])
+		return self.tensor_derivatives[mu][nu][wrt]
+
+	def getMixedDerivative(self, mu: int, nu: int, wrt1: int, wrt2: int):
+		if self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] is None:
+			self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] = sympy.diff(sympy.diff(self.tensor[mu][nu], self.coords.x[wrt1]), self.coords.x[wrt2])
+
+	def getInverseDerivative(self, mu: int, nu: int, wrt: sympy.Symbol) -> "Expression":
+		if self.tensor_inverse_derivatives[mu][nu][wrt] is None:
+			self.tensor_inverse_derivatives[mu][nu][wrt] = sympy.diff(self.tensor_inverse[mu][nu], self.coords.x[wrt])
+		return self.tensor_inverse_derivatives[mu][nu][wrt]
+
+	def getDeterminant(self):
+		if self.tensor_determinant is None:
+			self.tensor_determinant = sympy.Matrix(self.tensor).det()
+		return self.tensor_determinant()
+
+	def getInverseDeterminant(self):
+		if self.tensor_inverse_determinant is None:
+			self.tensor_inverse_determinant = sympy.Matrix(self.tensor_inverse).det()
+		return self.tensor_inverse_determinant
 
 class ChristoffelSymbols:
 
@@ -21,49 +80,8 @@ class ChristoffelSymbols:
 
 	def getDerivative(self, i, k, l, wrt):
 		if self.symbol_derivatives[i][k][l][wrt] is None:
-			self.symbol_derivatives[i][k][l][wrt] = diff(self.symbol[i][k][l], metric.x[wrt])
+			self.symbol_derivatives[i][k][l][wrt] = sympy.diff(self.get(i, k, l), self.metric.coords.x[wrt])
 		return self.symbol_derivatives[i][k][l][wrt]
-
-class MetricTensor:
-
-	x0 = None
-	x1 = None
-	x2 = None
-	x3 = None
-	x = None
-	v = symbols("v0 v1 v2 v3")
-	v0, v1, v2, v3 = v
-	tensor = None
-	tensor_inverse = None
-	tensor_derivatives = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
-	tensor_mixed_derivatives = [[[[None for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
-	tensor_inverse_derivatives = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
-
-	def __init__(self, coordinates: list[Symbol], metric: list[list["Expression"]]):
-		self.x0, self.x1, self.x2, self.x3 = coordinates
-		self.x = coordinates
-		self.tensor = metric
-		self.tensor_inverse = Matrix(metric).inv().tolist()
-
-	def get_dd(self, i, j):
-		return self.tensor[i][j]
-
-	def get_uu(self, i, j):
-		return self.tensor_inverse[i][j]
-
-	def getDerivative(self, mu: int, nu: int, wrt: Symbol) -> "Expression":
-		if self.tensor_derivatives[mu][nu][wrt] is None:
-			self.tensor_derivatives[mu][nu][wrt] = diff(self.tensor[mu][nu], self.x[wrt])
-		return self.tensor_derivatives[mu][nu][wrt]
-
-	def getMixedDerivative(self, mu: int, nu: int, wrt1: int, wrt2: int):
-		if self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] is None:
-			self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] = diff(diff(self.tensor[mu][nu], self.x[wrt1]), self.x[wrt2])
-
-	def getInverseDerivative(self, mu: int, nu: int, wrt: Symbol) -> "Expression":
-		if self.tensor_inverse_derivatives[mu][nu][wrt] is None:
-			self.tensor_inverse_derivatives[mu][nu][wrt] = diff(self.tensor_inverse[mu][nu], self.x[wrt])
-		return self.tensor_inverse_derivatives[mu][nu][wrt]
 
 class RiemannTensor:
 
@@ -103,7 +121,7 @@ class RicciTensor:
 				self.tensor_dd[i][j] = sum(
 					self.christoffel.getDerivative(a, i, j, a) for a in range(4)
 				) - sum(
-					self.chrisoffel.getDerivative(a, a, i, j) for a in range(4)
+					self.christoffel.getDerivative(a, a, i, j) for a in range(4)
 				) + sum(
 					sum(
 						self.christoffel.get(a,a,b) * self.christoffel.get(b,i,j)
@@ -219,12 +237,12 @@ class UnitSystem:
 	Lambda = None
 	kappa = None
 
-	def __init__(self, normc: bool, normG: bool, normh: bool, normLambda: bool, normkappa: bool):
-		c = 1 if normc else Symbol("c")
-		G = 1 if normG else Symbol("G")
-		h = 1 if normh else Symbol("h")
-		Lambda = 0 if normLambda else Symbol("Lambda")
-		kappa = 8 * pi * self.einstein_constant / self.lightspeed**4
+	def __init__(self, normc: bool, normG: bool, normh: bool, normLambda: bool):
+		self.c = 1 if normc else sympy.Symbol("c")
+		self.G = 1 if normG else sympy.Symbol("G")
+		self.h = 1 if normh else sympy.Symbol("h")
+		self.Lambda = 0 if normLambda else sympy.Symbol("Lambda")
+		self.kappa = 8 * sympy.pi * self.G / self.c**4
 
 class Spacetime:
 
@@ -250,16 +268,3 @@ class Spacetime:
 		self.einstein = EinsteinTensor(self.metric, self.ricci)
 		self.stress_energy_momentum = StressEnergyMomentumTensor(self.einstein, self.units)
 		self.geodesic_acceleration = GeodesicAccelerationVector(self.metric, self.christoffel)
-
-if __name__ == "__main__":
-	print("Testing Schwarzschild geometry")
-	print("Assembling parameters ...", end="")
-	x = symbols("t x y z")
-	M, r = Symbol("M"), sqrt(x[1]**2 + x[2]**2 + x[3]**2)
-	k = 1 - 2*M/r
-	ik = 1/k
-	mt = [[k, 0, 0, 0], [0, -ik, 0, 0], [0, 0, -ik, 0], [0, 0, 0, -ik]]
-	print("done.\nPreparing spacetime ...", end="")
-	metric = Metric(x, mt)
-	print("done.\nChristoffel symbols:")
-	print(metric.christoffel_symbols.get(1, 0, 0))
