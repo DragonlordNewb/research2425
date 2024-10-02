@@ -337,11 +337,13 @@ class StressEnergyMomentumTensor:
 	def dd(self, mu, nu):
 		if self.stress_energy_momentum_tensor_dd[mu, nu] is None:
 			self.stress_energy_momentum_tensor_dd[mu, nu] = simplify((self.einstein_tensor.dd(mu, nu) + self.units.Lambda*self.metric_tensor.dd(mu, nu)) / self.units.kappa)
+			self.stress_energy_momentum_tensor_dd[nu, mu] = self.stress_energy_momentum_tensor_dd[mu, nu]
 		return self.stress_energy_momentum_tensor_dd[mu, nu]
 
 	def uu(self, mu: int, nu: int) -> Symbol:
 		if self.stress_energy_momentum_tensor_uu[mu, nu] is None:
 			self.stress_energy_momentum_tensor_uu[mu, nu] = simplify((self.einstein_tensor.uu(mu, nu) + self.units.Lambda*self.metric_tensor.uu(mu, nu)) / self.units.kappa)
+			self.stress_energy_momentum_tensor_uu[nu, mu] = self.stress_energy_momentum_tensor_uu[mu. nu]
 		return self.stress_energy_momentum_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
