@@ -203,6 +203,8 @@ class RiemannTensor:
 				coefficient = coefficient + self.christoffel_symbols.udd(rho, mu, lam)*self.christoffel_symbols.udd(lam, nu, sig) - self.christoffel_symbols.udd(rho, nu, lam)*self.christoffel_symbols.udd(lam, mu, sig)
 			self.riemann_tensor_uddd[rho, sig, mu, nu] = simplify(coefficient)
 			self._riemann_tensor_uddd_computed[rho][sig][mu][nu] = True
+			self.riemann_tensor_uddd[mu, nu, rho, sig] = self.riemann_tensor_uddd[rho, sig, mu, nu]
+			self._riemann_tensor_uddd_computed[rho][sig][mu][nu] = True
 		return self.riemann_tensor_uddd[rho, sig, mu, nu]
 
 	def dddd(self, rho, sig, mu, nu):
