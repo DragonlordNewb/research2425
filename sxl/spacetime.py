@@ -244,6 +244,7 @@ class RicciTensor:
 			for lam in range(4):
 				coefficient = coefficient + self.riemann_tensor.uddd(lam, mu, lam, nu)
 			self.ricci_tensor_dd[mu, nu] = simplify(coefficient)
+			self.ricci_tensor_dd[nu, mu] = self.ricci_tensor_dd[mu, nu]
 		return self.ricci_tensor_dd[mu,nu]
 
 	def uu(self, mu: int, nu: int) -> Symbol:
@@ -253,6 +254,7 @@ class RicciTensor:
 				for sig in range(4):
 					coefficient = coefficient + self.metric_tensor.uu(mu, rho)*self.metric_tensor.uu(nu, sig)*self.dd(rho, sig)
 			self.ricci_tensor_uu[mu, nu] = simplify(coefficient)
+			self.ricci_tensor_uu[nu, mu] = self.ricci_tensor_uu[nu, mu]
 		return self.ricci_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
@@ -295,11 +297,13 @@ class EinsteinTensor:
 	def dd(self, mu, nu):
 		if self.einstein_tensor_dd[mu, nu] is None:
 			self.einstein_tensor_dd[mu, nu] = simplify(self.ricci_tensor.dd(mu, nu) - Rational("1/2")*self.ricci_tensor.scalar()*self.metric_tensor.dd(mu, nu))
+			self.einstein_tensor_dd[nu, mu] = self.einstein_tensor_dd[mu, nu]
 		return self.einstein_tensor_dd[mu, nu]
 
 	def uu(self, mu: int, nu: int) -> Symbol:
 		if self.einstein_tensor_uu[mu, nu] is None:
 			self.einstein_tensor_uu[mu, nu] = simplify(self.ricci_tensor.uu(mu, nu) - Rational("1/2")*self.ricci_tensor.scalar()*self.metric_tensor.uu(mu, nu))
+			self.einstein_tensor_uu[nu, mu] = self.einstein_tensor_uu[mu, nu]
 		return self.einstein_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
