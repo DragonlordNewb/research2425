@@ -8,6 +8,17 @@ DD = "dd"
 
 class UnitSystem:
 
+	"""
+	UnitSystem class.
+
+	Contains information about the unit system.
+	This is generally valuable because it allows
+	consistency between c=G=1, c=c and G=G, and
+	other systems of units, as well as stores info
+	about whether or not the cosmological constant
+	is to be considered.
+	"""
+
 	c = None
 	G = None
 	h = None
@@ -25,21 +36,47 @@ class UnitSystem:
 
 	@classmethod
 	def si(cls):
+		"""
+		The SI system of units (with a cosmological
+		constant).
+		"""
 		return cls(False, False, False, False)
 	
 	@classmethod
 	def si_ncc(cls):
+		"""
+		The SI system of units (without a 
+		cosmological constant).
+		"""
 		return cls(False, False, False, True)
 
 	@classmethod
 	def natural(cls):
+		"""
+		The natural system of units (with a
+		cosmological constant).
+		"""
 		return cls(True, True, True, False)
 
 	@classmethod
 	def natural_ncc(cls):
+		"""
+		The natural system of units (without
+		a cosmological constant).
+		"""
 		return cls(True, True, True, True)
 
 class CoordinateSystem:
+
+	"""
+	The CoordinateSystem class.
+	
+	Represents a 4-dimensional coordinate
+	system. Automatically generates coordinate-
+	time and proper-time derivatives of position
+	for use later and stores the names of each
+	coordinate as Symbols.
+	"""
 
 	dimensionality: int = 4
 	dimensions: list[int] = [0, 1, 2, 3]
@@ -54,29 +91,57 @@ class CoordinateSystem:
 		self.proper_velocities = [Derivative(self.x(i), self.proper_time) for i in range(4)]
 
 	def x(self, i: int) -> Symbol:
+		"""
+		Get the ith position coordinate (dx^i).
+		"""
 		return self.coordinates[i]
 
 	def v(self, i: int) -> Symbol:
+		"""
+		Get the ith coordinate velocity component (dx^i/dt).
+		"""
 		return self.coordinate_velocities[i]
 
 	def w(self, i: int) -> Symbol:
+		"""
+		Get the ith proper velocity component (dx^i/dtau).
+		"""
 		return self.proper_velocities[i]
 
 	# Implementations
 
 	@classmethod
 	def txyz(cls):
+		"""
+		The Cartesian coordinate system.
+		"""
 		return cls("t", "x", "y", "z")
 
 	@classmethod
 	def trtp(cls):
+		"""
+		The spherical coordinate system.
+		"""
 		return cls("t", "r", "theta", "phi")
 
 	@classmethod
 	def trtz(cls):
+		"""
+		The cylindrical coordinate system.
+		"""
 		return cls("t", "r", "theta", "z")
 
 class MetricTensor:
+
+	"""
+	The MetricTensor class.
+
+	Stores information about the metric tensor (g_ij),
+	its inverse (g^ij), derivatives in all four directions
+	of both tensors, and both determinants. The
+	CoordinateSystem must be provided so that derivatives
+	can be determined.
+	"""
 
 	coordinates: CoordinateSystem = None
 	metric_tensor_uu = Matrix([[None for i in range(4)] for j in range(4)])
@@ -98,37 +163,59 @@ class MetricTensor:
 		self.metric_determinant_dd = self.metric_tensor_dd.det()
 
 	def uu(self, i: int, j: int) -> Symbol:
+		"""
+		Component g^ij.
+		"""
 		return self.metric_tensor_uu[i, j]
 	
 	def dd(self, i: int, j: int) -> Symbol:
+		"""
+		Component g_ij.
+		"""
 		return self.metric_tensor_dd[i, j]
 
 	def det_uu(self):
+		"""
+		The determinant of g^ij.
+		"""
 		return self.metric_determinant_uu
 
 	def det_dd(self):
+		"""
+		The determinant of g_ij.
+		"""
 		return self.metric_determinant_dd
 
 	@classmethod
 	def minkowski_txyz(cls, units: UnitSystem):
-		# Metric from Gravitation.
-		# Christoffel symbols verified.
-		# Riemann tensor verified.
-		# Ricci tensor verified.
-		# Ricci scalar verified.
-		# Einstein tensor verified.
-		# SEM tensor verified.
+		"""
+		The Minkowski metric in Cartesian coordinates
+		with a particular system of units.
+		
+		Metric from Gravitation.
+		Christoffel symbols verified.
+		Riemann tensor verified.
+		Ricci tensor verified.
+		Ricci scalar verified.
+		Einstein tensor verified.
+		SEM tensor verified
+		"""
 		return cls(CoordinateSystem.txyz(), [[units.c**2, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1]], "dd")
 
 	@classmethod
 	def minkowski_trtp(cls, units: UnitSystem):
-		# Metric from Gravitation.
-		# Christoffel symbols verified.
-		# Riemann tensor not verified.
-		# Ricci tensor not verified.
-		# Ricci scalar not verified.
-		# Einstein tensor not verified.
-		# SEM tensor not verified.
+		"""
+		The Minkowski metric in spherical coordinates
+		with a particular system of units.
+
+		Metric from Gravitation.
+		Christoffel symbols verified.
+		Riemann tensor not verified.
+		Ricci tensor not verified.
+		Ricci scalar not verified.
+		Einstein tensor not verified.
+		SEM tensor not verified.
+		"""
 		coords = CoordinateSystem.trtp()
 		r2 = coords.x(1) ** 2
 		theta = coords.x(2)
@@ -136,6 +223,12 @@ class MetricTensor:
 	
 	@classmethod
 	def schwarzschild_txyz(cls, units: UnitSystem):
+		"""
+		The Schwarzschild metric in Cartesian
+		coordinates with a particular system of units.
+
+		Not yet tested.
+		"""
 		coords = CoordinateSystem.txyz()
 		M = Symbol("M")
 		r = sqrt(coords.x(1)**2 + coords.x(2)**2 + coords.x(3)**2)
@@ -144,6 +237,15 @@ class MetricTensor:
 		return cls(coords, [[k * units.c**2, 0, 0, 0], [0, -1/k, 0, 0], [0, 0, -1/k, 0], [0, 0, 0, -1/k]], "dd")
 
 class ChristoffelSymbols:
+
+	"""
+	The ChristoffelSymbols class.
+
+	Stores and computes Christoffel symbols of the first
+	and second kind, as well as their derivatives. Requires
+	the MetricTensor to be provided so that the symbols
+	can be computed.
+	"""
 
 	coordinates: CoordinateSystem = None
 	metric_tensor: MetricTensor = None
@@ -157,6 +259,9 @@ class ChristoffelSymbols:
 		self.coordinates = metric.coordinates
 
 	def udd(self, i, k, l):
+		"""
+		The Christoffel symbol of the second kind: Gamma^i_kl.
+		"""
 		if not self._christoffel_symbols_udd_computed[i][k][l]:
 			symbol = 0
 			for m in range(4):
@@ -168,12 +273,36 @@ class ChristoffelSymbols:
 		return self.christoffel_symbols_udd[i, k, l]
 	
 	def ddd(self, i, k, l):
+		"""
+		The Christoffel symbol of the first kind: Gamma_ikl.
+		"""
 		if not self._christoffel_symbols_ddd_computed[i][k][l]:
 			self.christoffel_symbols_ddd[i,k,l] = simplify(Rational('1/2')*(diff(self.metric_tensor.dd(i,k), self.coordinates.x(l))+diff(self.metric_tensor.dd(i,l), self.coordinates.x(k))-diff(self.metric_tensor.dd(k,l), self.coordinates.x(i))))
 			self._christoffel_symbols_ddd_computed[i][k][l] = True
 		return self.christoffel_symbols_ddd[i, k, l]
 
+	def compute_udd(self):
+		"""
+		Compute all Christoffel symbols of the second kind.
+		"""
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					self.udd(i, j, k)
+
+	def compute_ddd(self):
+		"""
+		Compute all Christoffel symbols of the first kind.
+		"""
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					self.ddd(i, j, k)
+
 	def compute(self):
+		"""
+		Compute all Christoffel symbols of both kinds.
+		"""
 		for i in range(4):
 			for j in range(4):
 				for k in range(4):
@@ -182,6 +311,18 @@ class ChristoffelSymbols:
 
 class RiemannTensor:
 
+	"""
+	The RiemannTensor class.
+
+	Stores information about all-covariant and 
+	contravariant-covariant (uddd) Riemann tensors.
+	Requires a bit more complexity because SymPy
+	doesn't like 4D arrays (but so do the
+	ChristoffelSymbols). Requires the CoordinateSystem
+	and the MetricTensor to take derivatives of the
+	metric.
+	"""
+
 	coordinates: CoordinateSystem = None
 	metric_tensor: MetricTensor = None
 	christoffel_symbols: ChristoffelSymbols = None
@@ -189,7 +330,6 @@ class RiemannTensor:
 	_riemann_tensor_uddd_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
 	riemann_tensor_dddd = tensor.array.MutableDenseNDimArray(range(256), (4, 4, 4, 4))
 	_riemann_tensor_dddd_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
-	kretschmann = None
 
 	def __init__(self, christoffel: ChristoffelSymbols) -> None:
 		self.metric_tensor = christoffel.metric_tensor
@@ -197,6 +337,9 @@ class RiemannTensor:
 		self.christoffel_symbols = christoffel
 
 	def uddd(self, rho, sig, mu, nu):
+		"""
+		The Riemann tensor component R^r_smn.
+		"""
 		if not self._riemann_tensor_uddd_computed[rho][sig][mu][nu]:
 			coefficient = diff(self.christoffel_symbols.udd(rho, nu, sig), self.coordinates.x(mu)) - diff(self.christoffel_symbols.udd(rho, mu, sig), self.coordinates.x(nu))
 			for lam in self.coordinates.dimensions:
@@ -208,6 +351,9 @@ class RiemannTensor:
 		return self.riemann_tensor_uddd[rho, sig, mu, nu]
 
 	def dddd(self, rho, sig, mu, nu):
+		"""
+		The Riemann tensor component R_rsmn.
+		"""
 		if not self._riemann_tensor_dddd_computed[rho][sig][mu][nu]:
 			coefficient = Rational('1/2')*(self.metric_tensor.dd(rho, nu).diff(self.coordinates.x(sig)).diff(self.coordinates(mu)) + self.metric_tensor.dd(sig, mu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(nu))\
 			-self.metric_tensor.dd(rho, mu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(nu))-self.metric_tensor.dd(sig, nu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(mu)))
@@ -219,6 +365,19 @@ class RiemannTensor:
 		return self.riemann_tensor_dddd[rho, sig, mu, nu]
 
 	def compute_uddd(self):
+		"""
+		Compute all uddd components.
+		"""
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					for l in range(4):
+						self.uddd(i, j, k, l)
+
+	def compute_dddd(self):
+		"""
+		Compute all dddd components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				for k in range(4):
@@ -226,6 +385,18 @@ class RiemannTensor:
 						self.uddd(i, j, k, l)
 
 class RicciTensor:
+
+	"""
+	The RicciTensor class.
+
+	Stores information about the covariant, contravariant,
+	and mixed Ricci tensors, as well as the Ricci scalar.
+	Must be supplied with the RiemannTensor (I'm working
+	on a way to allow it to alternatively use the
+	ChristoffelSymbols instead but this is what I have for
+	now) to calculate the Ricci tensor. The MetricTensor
+	is obtained from the RiemannTensor object passed in.
+	"""
 
 	metric_tensor: MetricTensor = None
 	riemann_tensor: RiemannTensor = None
@@ -239,6 +410,9 @@ class RicciTensor:
 		self.metric_tensor = self.riemann_tensor.metric_tensor
 
 	def dd(self, mu: int, nu: int) -> Symbol:
+		"""
+		The Ricci tensor component R_mn.
+		"""
 		if self.ricci_tensor_dd[mu, nu] is None:
 			coefficient = 0
 			for lam in range(4):
@@ -248,6 +422,9 @@ class RicciTensor:
 		return self.ricci_tensor_dd[mu,nu]
 
 	def uu(self, mu: int, nu: int) -> Symbol:
+		"""
+		The Ricci tensor component R^mn.
+		"""
 		if self.ricci_tensor_uu[mu, nu] is None:
 			coefficient = 0
 			for rho in range(4):
@@ -258,9 +435,15 @@ class RicciTensor:
 		return self.ricci_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
+		"""
+		The Ricci tensor component R^m_n.
+		"""
 		raise RuntimeError("The developer needs to fix the RicciTensor.ud method which was never implemented.")
 
 	def scalar(self) -> Symbol:
+		"""
+		The Ricci scalar.
+		"""
 		if self.ricci_scalar is None:
 			scalar = 0
 			for mu in range(4):
@@ -270,19 +453,36 @@ class RicciTensor:
 		return self.ricci_scalar
 
 	def compute_dd(self):
+		"""
+		Compute all covariant components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				self.dd(i, j)
 
 	def compute_uu(self):
+		"""
+		Compute all contravariant components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				self.uu(i, j)
 
 	def compute_scalar(self):
+		"""
+		Compute the Ricci scalar.
+		"""
 		self.scalar()
 
 class EinsteinTensor:
+
+	"""
+	The EinsteinTensor class.
+
+	Stores information about the Einstein tensor. Requires
+	the RicciTensor to calculate everything. The MetricTensor
+	is had from the RicciTensor object that's passed in.
+	"""
 
 	metric_tensor: MetricTensor = None
 	ricci_tensor: RicciTensor = None
@@ -295,31 +495,56 @@ class EinsteinTensor:
 		self.metric_tensor = self.ricci_tensor.metric_tensor
 
 	def dd(self, mu, nu):
+		"""
+		The Einstein tensor component G_mn.
+		"""
 		if self.einstein_tensor_dd[mu, nu] is None:
 			self.einstein_tensor_dd[mu, nu] = simplify(self.ricci_tensor.dd(mu, nu) - Rational("1/2")*self.ricci_tensor.scalar()*self.metric_tensor.dd(mu, nu))
 			self.einstein_tensor_dd[nu, mu] = self.einstein_tensor_dd[mu, nu]
 		return self.einstein_tensor_dd[mu, nu]
 
 	def uu(self, mu: int, nu: int) -> Symbol:
+		"""
+		The Einstein tensor component G^mn.
+		"""
 		if self.einstein_tensor_uu[mu, nu] is None:
 			self.einstein_tensor_uu[mu, nu] = simplify(self.ricci_tensor.uu(mu, nu) - Rational("1/2")*self.ricci_tensor.scalar()*self.metric_tensor.uu(mu, nu))
 			self.einstein_tensor_uu[nu, mu] = self.einstein_tensor_uu[mu, nu]
 		return self.einstein_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
+		"""
+		The Einstein tensor component G^m_n.
+		"""
 		raise RuntimeError("The developer needs to fix the EinsteinTensor.ud method which was never implemented.")
 
 	def compute_dd(self):
+		"""
+		Compute all covariant components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				self.dd(i, j)
 
 	def compute_uu(self):
+		"""
+		Compute all contravariant components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				self.uu(i, j)
 
 class StressEnergyMomentumTensor:
+
+	"""
+	The stress-energy-momentum tensor - the object of
+	the Einstein Field Equations - stored in the 
+	StressEnergyMomentumTensor object.
+
+	Stores the SEM tensor. Requires the Einstein tensor
+	and a system of units (for Einstein's gravitational
+	constant).
+	"""
 
 	units: UnitSystem = None
 	metric_tensor: MetricTensor = None
@@ -335,26 +560,41 @@ class StressEnergyMomentumTensor:
 		self.einstein_tensor = einstein
 
 	def dd(self, mu, nu):
+		"""
+		The SEM component T_mn.
+		"""
 		if self.stress_energy_momentum_tensor_dd[mu, nu] is None:
 			self.stress_energy_momentum_tensor_dd[mu, nu] = simplify((self.einstein_tensor.dd(mu, nu) + self.units.Lambda*self.metric_tensor.dd(mu, nu)) / self.units.kappa)
 			self.stress_energy_momentum_tensor_dd[nu, mu] = self.stress_energy_momentum_tensor_dd[mu, nu]
 		return self.stress_energy_momentum_tensor_dd[mu, nu]
 
 	def uu(self, mu: int, nu: int) -> Symbol:
+		"""
+		The SEM component T^mn.
+		"""
 		if self.stress_energy_momentum_tensor_uu[mu, nu] is None:
 			self.stress_energy_momentum_tensor_uu[mu, nu] = simplify((self.einstein_tensor.uu(mu, nu) + self.units.Lambda*self.metric_tensor.uu(mu, nu)) / self.units.kappa)
 			self.stress_energy_momentum_tensor_uu[nu, mu] = self.stress_energy_momentum_tensor_uu[mu. nu]
 		return self.stress_energy_momentum_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
+		"""
+		The SEM component T^m_n.
+		"""
 		raise RuntimeError("The developer needs to fix the StressEnergyMomentumTensor.ud method which was never implemented.")
 
 	def compute_dd(self):
+		"""
+		Compute all covariant components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				self.dd(i, j)
 
 	def compute_uu(self):
+		"""
+		Compute all contravariant components.
+		"""
 		for i in range(4):
 			for j in range(4):
 				self.uu(i, j)
@@ -393,6 +633,14 @@ class GeodesicAccelerationVectors:
 			self.proper(i)
 
 class Spacetime:
+
+	"""
+	The Spacetime class.
+
+	Stores all pertinent information about the spacetime.
+	Put in a metric and system of units, and all other 
+	relevant tensors are generated (evaluated lazily).
+	"""
 
 	units: UnitSystem = None
 	coordinates: CoordinateSystem = None
