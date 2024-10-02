@@ -1,4 +1,5 @@
 import sympy
+from sxl import util
 
 class CoordinateSystem:
 
@@ -37,27 +38,39 @@ class MetricTensor:
 
 	def getDerivative(self, mu: int, nu: int, wrt: sympy.Symbol) -> "Expression":
 		if self.tensor_derivatives[mu][nu][wrt] is None:
-			self.tensor_derivatives[mu][nu][wrt] = sympy.diff(self.tensor[mu][nu], self.coords.x[wrt])
+			self.tensor_derivatives[mu][nu][wrt] = sympy.simplify(sympy.diff(self.tensor[mu][nu], self.coords.x[wrt]))
 		return self.tensor_derivatives[mu][nu][wrt]
 
 	def getMixedDerivative(self, mu: int, nu: int, wrt1: int, wrt2: int):
 		if self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] is None:
-			self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] = sympy.diff(sympy.diff(self.tensor[mu][nu], self.coords.x[wrt1]), self.coords.x[wrt2])
+			self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2] = sympy.simplify(sympy.diff(sympy.diff(self.tensor[mu][nu], self.coords.x[wrt1]), self.coords.x[wrt2]))
+		return self.tensor_mixed_derivatives[mu][nu][wrt1][wrt2]
 
 	def getInverseDerivative(self, mu: int, nu: int, wrt: sympy.Symbol) -> "Expression":
 		if self.tensor_inverse_derivatives[mu][nu][wrt] is None:
-			self.tensor_inverse_derivatives[mu][nu][wrt] = sympy.diff(self.tensor_inverse[mu][nu], self.coords.x[wrt])
+			self.tensor_inverse_derivatives[mu][nu][wrt] = sympy.simplify(sympy.diff(self.tensor_inverse[mu][nu], self.coords.x[wrt]))
 		return self.tensor_inverse_derivatives[mu][nu][wrt]
 
 	def getDeterminant(self):
 		if self.tensor_determinant is None:
-			self.tensor_determinant = sympy.Matrix(self.tensor).det()
+			self.tensor_determinant = sympy.simplify(sympy.Matrix(self.tensor).det())
 		return self.tensor_determinant()
 
 	def getInverseDeterminant(self):
 		if self.tensor_inverse_determinant is None:
-			self.tensor_inverse_determinant = sympy.Matrix(self.tensor_inverse).det()
+			self.tensor_inverse_determinant = sympy.simplify(sympy.Matrix(self.tensor_inverse).det())
 		return self.tensor_inverse_determinant
+
+	def compute(self):
+		self.get_uu(0, 0)
+		self.getDeterminant()
+		self.getInverseDeterminant()
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					self.getDerivative(i, j, k)
+					for m in range(4):
+						self.getInverseDerivative(i, j, k, m)
 
 class ChristoffelSymbols:
 
@@ -71,17 +84,25 @@ class ChristoffelSymbols:
 	def get(self, i, k, l):
 		if self.symbol[i][k][l] is None:
 			# Compute the symbol
-			self.symbol[i][k][l] = sum(
-				self.metric.tensor_inverse[i][m]
+			self.symbol[i][k][l] = sympy.simplify(sum(
+				self.metric.get_uu(i, m)
 				* (self.metric.getDerivative(m, k, l) + self.metric.getDerivative(m, l, k) - self.metric.getDerivative(k, l, m)) 
 				for m in range(4)
-			) / 2
+			) / 2)
 		return self.symbol[i][k][l]
 
 	def getDerivative(self, i, k, l, wrt):
 		if self.symbol_derivatives[i][k][l][wrt] is None:
-			self.symbol_derivatives[i][k][l][wrt] = sympy.diff(self.get(i, k, l), self.metric.coords.x[wrt])
+			self.symbol_derivatives[i][k][l][wrt] = sympy.simplify(sympy.diff(self.get(i, k, l), self.metric.coords.x[wrt]))
 		return self.symbol_derivatives[i][k][l][wrt]
+
+	def compute(self):
+		for i in range(4):
+			for k in range(4):
+				for l in range(4):
+					self.get(i, k, l)
+					for m in range(4):
+						self.getDerivative(i, k, l, m)
 
 class RiemannTensor:
 
@@ -93,8 +114,15 @@ class RiemannTensor:
 
 	def get(self, i: int, k: int, l: int, m: int):
 		if self.tensor_uddd[i][k][l][m] is None:
-			self.tensor_uddd[i][k][l][m] = (self.metric.getMixedDerivative(i,m,k,l)+self.metric.getMixedDerivative(k,l,i,m)-self.metric.getMixedDerivative(i,l,k,m)-self.metric.getMixedDerivative(k,m,i,l)) / 2
+			self.tensor_uddd[i][k][l][m] = sympy.simplify((self.metric.getMixedDerivative(i,m,k,l)+self.metric.getMixedDerivative(k,l,i,m)-self.metric.getMixedDerivative(i,l,k,m)-self.metric.getMixedDerivative(k,m,i,l)) / 2)
 		return self.tensor_uddd[i][k][l][m]
+
+	def compute(self):
+		for i in range(4):
+			for k in range(4):
+				for l in range(4):
+					for m in range(4):
+						self.get(i, k, l, m)
 
 class RicciTensor:
 
@@ -118,7 +146,7 @@ class RicciTensor:
 	def get_dd(self, i: int, j: int):
 		if self.tensor_dd[i][j] is None:
 			if self.initializedWith == ChristoffelSymbols:
-				self.tensor_dd[i][j] = sum(
+				self.tensor_dd[i][j] = sympy.simplify(sum(
 					self.christoffel.getDerivative(a, i, j, a) for a in range(4)
 				) - sum(
 					self.christoffel.getDerivative(a, a, i, j) for a in range(4)
@@ -128,32 +156,38 @@ class RicciTensor:
 						- self.christoffel.get(a,i,b) * self.christoffel.get(b,a,j)
 						for b in range(4)
 					) for a in range(4)
-				)
+				))
 			else:
-				self.tensor_dd[i][j] = sum(
+				self.tensor_dd[i][j] = sympy.simplify(sum(
 					self.riemann.get(k, i, k, j) for k in range(4)
-				)
+				))
 		return self.tensor_dd[i][j]
 
 	def get_uu(self, i: int, j: int):
 		if self.tensor_uu[i][j] is None:
-			self.tensor_uu[i][j] = sum(
+			self.tensor_uu[i][j] = sympy.simplify(sum(
 				sum(
 					self.metric.get_uu(i, a) * self.metric.get_uu(j, b) * self.get_dd(a, b)
 					for b in range(4)
 				) for a in range(4)
-			)
+			))
 		return self.tensor_uu[i][j]
 
 	def getScalar(self):
 		if self.scalar is None:
-			self.scalar = sum(
+			self.scalar = sympy.simplify(sum(
 				sum(
 					self.metric.get_uu(i, j) * self.get_dd(i, j)
 					for j in range(4)
 				) for i in range(4)
-			)
+			))
 		return self.scalar
+
+	def compute(self):
+		self.getScalar()
+		for i in range(4):
+			for j in range(4):
+				self.get_uu(i, j)
 	
 class EinsteinTensor:
 
@@ -167,15 +201,21 @@ class EinsteinTensor:
 
 	def get_dd(self, i: int, j: int):
 		if self.tensor_dd[i][j] is None:
-			self.tensor_dd[i][j] = self.ricci.get_dd(i, j) \
-			- (self.ricci.metric.get_dd(i, j) * self.ricci.getScalar() / 2)
+			self.tensor_dd[i][j] = sympy.simplify(self.ricci.get_dd(i, j) \
+			- (self.ricci.metric.get_dd(i, j) * self.ricci.getScalar() / 2))
 		return self.tensor_dd[i][j]
 
 	def get_uu(self, i: int, j: int):
 		if self.tensor_uu[i][j] is None:
-			self.tensor_uu[i][j] = self.ricci.get_uu(i, j) \
-			- (self.ricci.metric.getInverse(i, j) * self.ricci.getScalar() / 2)
+			self.tensor_uu[i][j] = sympy.simplify(self.ricci.get_uu(i, j) \
+			- (self.ricci.metric.getInverse(i, j) * self.ricci.getScalar() / 2))
 		return self.tensor_uu[i][j]
+
+	def compute(self):
+		for i in range(4):
+			for j in range(4):
+				get_dd(i, j)
+				get_uu(i, j)
 
 class StressEnergyMomentumTensor:
 
@@ -190,20 +230,26 @@ class StressEnergyMomentumTensor:
 
 	def get_dd(self, i: int, j: int):
 		if self.tensor_dd[i][j] is None:
-			self.tensor_dd[i][j] = (self.einstein.get_dd(i,j)+(self.units.Lambda*self.einstein.ricci.metric.get_dd(i,j)))/self.units.kappa
+			self.tensor_dd[i][j] = sympy.simplify((self.einstein.get_dd(i,j)+(self.units.Lambda*self.einstein.ricci.metric.get_dd(i,j)))/self.units.kappa)
 		return self.tensor_dd[i][j]
 
 	def get_uu(self, i: int, j: int):
 		if self.tensor_uu[i][j] is None:
-			self.tensor_uu[i][j] = (self.einstein.get_dd(i,j)+(self.units.Lambda*self.einstein.ricci.metric.get_uu(i,j)))/self.units.kappa
+			self.tensor_uu[i][j] = sympy.simplify((self.einstein.get_dd(i,j)+(self.units.Lambda*self.einstein.ricci.metric.get_uu(i,j)))/self.units.kappa)
 		return self.tensor_uu[i][j]
+
+	def compute(self):
+		for i in range(4):
+			for j in range(4):
+				self.get_dd(i, j)
+				self.get_uu(i, j)
 
 class GeodesicAccelerationVector:
 
 	metric: MetricTensor = None
 	christoffel: ChristoffelSymbols
 	vector_dxds = [None for i in range(4)]
-	vector_dxdt = [None for i in range(4)]
+	vector_dxdt = [None for i in range(3)]
 
 	def __init__(self, metric: MetricTensor, christoffel: ChristoffelSymbols):
 		self.metric = metric
@@ -213,21 +259,27 @@ class GeodesicAccelerationVector:
 		if self.vector_dxds[i] is None:
 			self.vector_dxds[i] = -sum(
 				sum(
-					self.christoffel.get(i, a, b) * self.metric.v[a] * self.metric.v[b]
+					self.christoffel.get(i, a, b) * self.metric.coords.v[a] * self.metric.coords.v[b]
 					for b in range(4)
 				) for a in range(4)
 			)
 		return self.vector_dxds[i]
 
 	def get_dxdt(self, i: int):
-		if self.vector_dxdt[i] is None:
-			self.vector_dxdt[i] = sum(
+		if i == 0: return 1
+		if self.vector_dxdt[i-1] is None:
+			self.vector_dxdt[i-1] = sum(
 				sum(
-					self.christoffel.get(0, a, b) * self.metric.v[a] * self.metric.v[b] * self.metric.v[i]
-					for b in range(4)
+					self.christoffel.get(0, a, b) * self.metric.coords.v[a] * self.metric.coords.v[b] * self.metric.coords.v[i]
+					for b in (range(4))
 				) for a in range(4)
 			) - self.get_dxds(i)
-		return self.vector_dxdt[i]
+		return self.vector_dxdt[i-1]
+
+	def compute(self):
+		for i in range(4):
+			self.get_dxds(i)
+			self.get_dxdt(i)
 
 class UnitSystem:
 

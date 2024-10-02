@@ -1,4 +1,5 @@
 import sys
+import sympy as sp
 
 def tp(*args):
     # Trailoff print
