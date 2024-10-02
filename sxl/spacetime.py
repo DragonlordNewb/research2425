@@ -76,7 +76,6 @@ class CoordinateSystem:
 	def trtz(cls):
 		return cls("t", "r", "theta", "z")
 
-
 class MetricTensor:
 
 	coordinates: CoordinateSystem = None
@@ -112,7 +111,37 @@ class MetricTensor:
 
 	@classmethod
 	def minkowski_txyz(cls, units: UnitSystem):
+		# Metric from Gravitation.
+		# Christoffel symbols verified.
+		# Riemann tensor verified.
+		# Ricci tensor verified.
+		# Ricci scalar verified.
+		# Einstein tensor verified.
+		# SEM tensor verified.
 		return cls(CoordinateSystem.txyz(), [[units.c**2, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1]], "dd")
+
+	@classmethod
+	def minkowski_trtp(cls, units: UnitSystem):
+		# Metric from Gravitation.
+		# Christoffel symbols verified.
+		# Riemann tensor not verified.
+		# Ricci tensor not verified.
+		# Ricci scalar not verified.
+		# Einstein tensor not verified.
+		# SEM tensor not verified.
+		coords = CoordinateSystem.trtp()
+		r2 = coords.x(1) ** 2
+		theta = coords.x(2)
+		return cls(coords, [[units.c**2, 0, 0, 0], [0, -1, 0, 0], [0, 0, -r2, 0], [0, 0, 0, -r2 * sin(theta)**2]], "dd")
+	
+	@classmethod
+	def schwarzschild_txyz(cls, units: UnitSystem):
+		coords = CoordinateSystem.txyz()
+		M = Symbol("M")
+		r = sqrt(coords.x(1)**2 + coords.x(2)**2 + coords.x(3)**2)
+		r_s = Symbol("r_s")
+		k = 1 - r_s/r
+		return cls(coords, [[k * units.c**2, 0, 0, 0], [0, -1/k, 0, 0], [0, 0, -1/k, 0], [0, 0, 0, -1/k]], "dd")
 
 class ChristoffelSymbols:
 
@@ -134,6 +163,8 @@ class ChristoffelSymbols:
 				symbol = symbol + Rational("1/2")*self.metric_tensor.uu(m,i)*(diff(self.metric_tensor.dd(k,m), self.coordinates.x(i))+diff(self.metric_tensor.dd(l,m), self.coordinates.x(k))-diff(self.metric_tensor.dd(k,l), self.coordinates.x(m)))
 			self.christoffel_symbols_udd[i,k,l] = simplify(symbol)
 			self._christoffel_symbols_udd_computed[i][k][l] = True
+			self.christoffel_symbols_udd[i,l,k] = self.christoffel_symbols_udd[i,k,l]
+			self._christoffel_symbols_udd_computed[i][l][k] = True
 		return self.christoffel_symbols_udd[i, k, l]
 	
 	def ddd(self, i, k, l):
@@ -158,6 +189,7 @@ class RiemannTensor:
 	_riemann_tensor_uddd_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
 	riemann_tensor_dddd = tensor.array.MutableDenseNDimArray(range(256), (4, 4, 4, 4))
 	_riemann_tensor_dddd_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
+	kretschmann = None
 
 	def __init__(self, christoffel: ChristoffelSymbols) -> None:
 		self.metric_tensor = christoffel.metric_tensor
@@ -183,6 +215,13 @@ class RiemannTensor:
 			self.riemann_tensor_dddd[rho, sig, mu, nu] = simplify(coefficient)
 			self._riemann_tensor_dddd_computed[rho][sig][mu][nu] = True
 		return self.riemann_tensor_dddd[rho, sig, mu, nu]
+
+	def compute_uddd(self):
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					for l in range(4):
+						self.uddd(i, j, k, l)
 
 class RicciTensor:
 
@@ -226,6 +265,19 @@ class RicciTensor:
 			self.ricci_scalar = simplify(scalar)
 		return self.ricci_scalar
 
+	def compute_dd(self):
+		for i in range(4):
+			for j in range(4):
+				self.dd(i, j)
+
+	def compute_uu(self):
+		for i in range(4):
+			for j in range(4):
+				self.uu(i, j)
+
+	def compute_scalar(self):
+		self.scalar()
+
 class EinsteinTensor:
 
 	metric_tensor: MetricTensor = None
@@ -250,6 +302,16 @@ class EinsteinTensor:
 
 	def ud(self, mu: int, nu: int) -> Symbol:
 		raise RuntimeError("The developer needs to fix the EinsteinTensor.ud method which was never implemented.")
+
+	def compute_dd(self):
+		for i in range(4):
+			for j in range(4):
+				self.dd(i, j)
+
+	def compute_uu(self):
+		for i in range(4):
+			for j in range(4):
+				self.uu(i, j)
 
 class StressEnergyMomentumTensor:
 
@@ -300,23 +362,27 @@ class GeodesicAccelerationVectors:
 		self.christoffel_symbols = christoffel
 		self.coordinates = christoffel.coordinates
 
-	def proper(i: int) -> Symbol:
+	def proper(self, i: int) -> Symbol:
 		if self.proper_geodesic_acceleration_vector[i] is None:
 			accel = 0
 			for mu in range(4):
 				for nu in range(4):
-					accel = accel - self.christoffel.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
+					accel = accel - self.christoffel_symbols.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
 			self.proper_geodesic_acceleration_vector[i] = accel
 		return self.proper_geodesic_acceleration_vector[i]
 
-	def coordinate(i: int) -> Symbol:
+	def coordinate(self, i: int) -> Symbol:
 		if self.proper_geodesic_acceleration_vector[i] is None:
 			accel = 0
 			for mu in range(4):
 				for nu in range(4):
-					accel = accel - self.christoffel.udd(0, mu, nu)*self.coordinates.v(i)*self.coordinates.v(mu)*self.coordinates.v(nu) - self.christoffel.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
+					accel = accel - self.christoffel_symbols.udd(0, mu, nu)*self.coordinates.v(i)*self.coordinates.v(mu)*self.coordinates.v(nu) - self.christoffel_symbols.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
 			self.proper_geodesic_acceleration_vector[i] = accel
 		return self.proper_geodesic_acceleration_vector[i]
+	
+	def compute_proper(self):
+		for i in range(4):
+			self.proper(i)
 
 class Spacetime:
 

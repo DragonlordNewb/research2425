@@ -3,8 +3,10 @@ import sympy
 
 # https://f.yukterez.net/einstein.equations/files/8.html#transformation
 
-units = sxl.spacetime.UnitSystem.si()
-metric = sxl.spacetime.MetricTensor.minkowski_txyz(units)
+units = sxl.spacetime.UnitSystem.si_ncc()
+metric = sxl.spacetime.MetricTensor.minkowski_trtp(units)
 spacetime = sxl.spacetime.Spacetime(metric, units)
-spacetime.stress_energy_momentum_tensor.compute_uu()
-sympy.pprint(spacetime.stress_energy_momentum_tensor.stress_energy_momentum_tensor_uu)
+spacetime.christoffel_symbols.compute()
+spacetime.riemann_tensor.compute_uddd()
+sympy.pprint(spacetime.riemann_tensor.riemann_tensor_uddd)
+sympy.pprint(spacetime.christoffel_symbols.christoffel_symbols_udd)
