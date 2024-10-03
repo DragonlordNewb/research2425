@@ -1,5 +1,6 @@
 from sympy import *
 from warnings import *
+from abc import abstractmethod
 
 simplefilter("ignore")
 
@@ -148,6 +149,8 @@ class MetricTensor:
 	metric_tensor_dd = Matrix([[None for i in range(4)] for j in range(4)])
 	metric_determinant_uu = None
 	metric_determinant_dd = None
+	singularities = [None for i in range(4)]
+	_is_diagonal = None
 
 	def __init__(self, coords: CoordinateSystem, tensor: Matrix, indexing: str) -> None:
 		self.coordinates = coords
@@ -161,6 +164,22 @@ class MetricTensor:
 
 		self.metric_determinant_uu = self.metric_tensor_uu.det()
 		self.metric_determinant_dd = self.metric_tensor_dd.det()
+
+	def is_diagonal(self):
+		if self.is_diagonal is None:
+			d = None
+			for i in range(4):
+				for j in range(4):
+					if i == j and 0 in (self.dd(i), self.uu(i)):
+						d = False
+						break
+					elif i != j and (self.dd(i) != 0 or self.uu(i) != 0):
+						d = False
+						break
+				if d is not None:
+					break
+			self._is_diagonal = d
+		return self._is_diagonal
 
 	def uu(self, i: int, j: int) -> Symbol:
 		"""
@@ -185,6 +204,36 @@ class MetricTensor:
 		The determinant of g_ij.
 		"""
 		return self.metric_determinant_dd
+
+	def locate_singularities(self, i: int):
+		"""
+		Determines if singularities exist.
+		Returns whether or not there are any after
+		putting the singularity conditions in the
+		MetricTensor.singularities variable.
+
+		Singularities occur where the metric determinant
+		is zero (or where the metric is otherwise
+		pathological for the given coordinate
+		system). Using SymPy's algebraic solvers,
+		we find those points for each coordinate
+		to determine where the singular surfaces
+		are.
+		"""
+
+		if self.is_diagonal():
+			"""
+			In a diagonal metric, there is a certain
+			type of pathology when the metric components
+			go to zero. For example, the Schwarzschild
+			surface, which doesn't necessarily constitute
+			a "singularity" but is certainly bad enough
+			that an observer shouldn't try and cross it
+			for our purposes.
+
+			Find all the zeros of the metric components
+			if they exist.
+			"""
 
 	@classmethod
 	def minkowski_txyz(cls, units: UnitSystem):
@@ -235,6 +284,134 @@ class MetricTensor:
 		r_s = Symbol("r_s")
 		k = 1 - r_s/r
 		return cls(coords, [[k * units.c**2, 0, 0, 0], [0, -1/k, 0, 0], [0, 0, -1/k, 0], [0, 0, 0, -1/k]], "dd")
+
+class GeneralTensor:
+
+	"""
+	The Rank2Tensor class. Describes a Rank-2 tensor.
+
+	Comes with methods for element calculation and
+	access, as well as other doodads.
+	"""
+
+	tensor_uu = [[None for i in range(4)] for j in range(4)]
+	tensor_dd = [[None for i in range(4)] for j in range(4)]
+	requisites = None
+	metric = None
+
+	def __init__(self, metric: MetricTensor, indexing: str, *T, **requisites):
+		self.metric = metric
+		self.requisites = requisites
+		if len(rows) == 0:
+			return
+		elif len(rows) != 4:
+			raise IndexError("GeneralTensor must be a 4D 2-form (i.e. 4x4).")
+		if indexing == "uu":
+			self.tensor_uu = T
+		elif indexing == "dd":
+			self.tensor_dd = T
+
+	def find_uu(i, j):
+		return NotImplemented("GeneralTensor's contravariant finder not implemented.")
+
+	def find_dd(i, j):
+		return NotImplemented("GeneralTensor covariant finder not implemented.")
+
+	def uu(self, i, j):
+		if self.tensor_uu[i][j] is None:
+			computation = self.find_uu(i, j)
+			self.tensor_uu[i][j] = computation
+			self.tensor_uu[j][i] = computation
+		return self.tensor_uu[i][j]
+
+	def dd(self, i, j):
+		if self.tensor_dd[i][j] is None:
+			computation = self.find_dd(i, j)
+			self.tensor_dd[i][j] = computation
+			self.tensor_dd[j][i] = computation
+		return self.tensor_dd[i][j]
+
+	def compute_uu(self):
+		for i in range(4):
+			for j in range(4):
+				self.uu(i, j)
+
+	def compute_dd(self):
+		for i in range(4):
+			for j in range(4):
+				self.dd(i, j)
+
+	def raise_indices(self, i, j):
+		"""
+		Use index raising to find contravariant components (requires metric).
+		"""
+		return
+
+	def lower_indices(self, i, j):
+		"""
+		Use index lowering to find covariant components (requires metric).
+		"""
+		return
+
+class GeneralFourVector:
+
+	update_alternate_indices = False
+	vector_u = [None, None, None, None]
+	vector_d = [None, None, None, None]
+	metric = None
+
+	def __init__(self, metric: MetricTensor, indexing: str, *v):
+		self.metric = metric
+		if len(v) == 0:
+			return
+		elif len(v) != 4:
+			raise IndexError("GeneralFourVectors are four-dimensional.")
+		if indexing == "u":
+			self.vector_u = v
+		elif indexing == "d":
+			self.vector_d = v
+
+	def find_u(self, i):
+		raise NotImplemented("GeneralFourVector contravariant finder not implemented.")
+
+	def find_d(self, i):
+		raise NotImplemented("GeneralFourVector covariant finder not implemented.")
+
+	def u(self, i):
+		if self.vector_u[i] is None:
+			self.vector_u[i] = self.find_u(i)
+		return self.vector_u[i]
+
+	def d(self, i):
+		if self.vector_d[i] is None:
+			self.vector_d[i] = self.find_d(i)
+		return self.vector_d[i]
+
+	def compute_u(self):
+		for i in range(4):
+			self.u(i)
+
+	def compute_d(self):
+		for i in range(4):
+			self.d(i)
+
+	def raise_index(self, i):
+		"""
+		Use index raising to find contravariant components.
+		"""
+		return
+
+	def lower_index(self, i):
+		"""
+		Use index lowering to find covariant components.
+		"""
+		return
+
+	@classmethod 
+	def zero(cls, metric: MetricTensor) -> GeneralFourVector:
+		return cls(metric, "dd", 0, 0, 0, 0)
+
+# ===== EINSTEIN FIELD EQUATION COMPONENTS ===== #
 
 class ChristoffelSymbols:
 
