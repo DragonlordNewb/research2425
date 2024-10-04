@@ -1,11 +1,9 @@
 from sympy import *
 from warnings import *
 from abc import abstractmethod
+from sxl.util import *
 
-simplefilter("ignore")
-
-UU = "uu"
-DD = "dd"
+simplefilter("ignore") # I don't care that SymPy doesn't want None in its matrices.
 
 class UnitSystem:
 
@@ -259,11 +257,11 @@ class MetricTensor:
 
 		Metric from Gravitation.
 		Christoffel symbols verified.
-		Riemann tensor not verified.
-		Ricci tensor not verified.
-		Ricci scalar not verified.
-		Einstein tensor not verified.
-		SEM tensor not verified.
+		Riemann tensor verified.
+		Ricci tensor verified.
+		Ricci scalar verified.
+		Einstein tensor verified.
+		SEM tensor verified.
 		"""
 		coords = CoordinateSystem.trtp()
 		r2 = coords.x(1) ** 2
@@ -284,6 +282,21 @@ class MetricTensor:
 		r_s = Symbol("r_s")
 		k = 1 - r_s/r
 		return cls(coords, [[k * units.c**2, 0, 0, 0], [0, -1/k, 0, 0], [0, 0, -1/k, 0], [0, 0, 0, -1/k]], "dd")
+	
+	@classmethod
+	def schwarzschild_trtp(cls, units: UnitSystem):
+		"""
+		The Schwarzschild metric in spherical
+		coordinates with a particular system of units.
+
+		Not yet tested.
+		"""
+		coords = CoordinateSystem.txyz()
+		M = Symbol("M")
+		r = sqrt(coords.x(1)**2 + coords.x(2)**2 + coords.x(3)**2)
+		r_s = Symbol("r_s")
+		k = 1 - r_s/r
+		return cls(coords, [[units.c**2 * k, 0, 0, 0], [0, -1/k, 0, 0], [0, 0, -r2, 0], [0, 0, 0, -r2 * sin(theta)**2]], "dd")
 
 class GeneralTensor:
 
@@ -299,17 +312,20 @@ class GeneralTensor:
 	requisites = None
 	metric = None
 
-	def __init__(self, metric: MetricTensor, indexing: str, *T, **requisites):
+	def __init__(self, metric: MetricTensor, indexing: str=None, *T, **requisites):
 		self.metric = metric
 		self.requisites = requisites
-		if len(rows) == 0:
+		if len(T) == 0:
 			return
-		elif len(rows) != 4:
+		elif len(T) != 4:
 			raise IndexError("GeneralTensor must be a 4D 2-form (i.e. 4x4).")
 		if indexing == "uu":
 			self.tensor_uu = T
 		elif indexing == "dd":
 			self.tensor_dd = T
+
+		if Configuration.autocompute:
+			self.compute()
 
 	def find_uu(i, j):
 		return NotImplemented("GeneralTensor's contravariant finder not implemented.")
@@ -341,6 +357,10 @@ class GeneralTensor:
 			for j in range(4):
 				self.dd(i, j)
 
+	def compute(self):
+		self.compute_uu()
+		self.compute_dd()
+
 	def raise_indices(self, i, j):
 		"""
 		Use index raising to find contravariant components (requires metric).
@@ -352,6 +372,34 @@ class GeneralTensor:
 		Use index lowering to find covariant components (requires metric).
 		"""
 		return
+	
+	# Math operators
+
+	def __add__(self, other: "GeneralTensor") -> "GeneralTensor":
+		self.compute()
+		other.compute()
+		T = GeneralTensor(self.metric, "dd")
+		T.requisites.update(other.requisites)
+		for i in range(4):
+			for j in range(4):
+				T.tensor_uu[i][j] = self.uu(i, j) + other.uu(i, j)
+				T.tensor_dd[i][j] = self.dd(i, j) + other.dd(i, j)
+		return T
+	
+	def __sub__(self, other: "GeneralTensor") -> "GeneralTensor":
+		try:
+			self.compute()
+			other.compute()
+		except NotImplemented:
+			pass
+
+		T = GeneralTensor(self.metric, "dd")
+		T.requisites.update(other.requisites)
+		for i in range(4):
+			for j in range(4):
+				T.tensor_uu[i][j] = self.uu(i, j) - other.uu(i, j)
+				T.tensor_dd[i][j] = self.dd(i, j) - other.dd(i, j)
+		return T
 
 class GeneralFourVector:
 
@@ -360,7 +408,7 @@ class GeneralFourVector:
 	vector_d = [None, None, None, None]
 	metric = None
 
-	def __init__(self, metric: MetricTensor, indexing: str, *v):
+	def __init__(self, metric: MetricTensor, indexing: str=None, *v):
 		self.metric = metric
 		if len(v) == 0:
 			return
@@ -410,6 +458,49 @@ class GeneralFourVector:
 	@classmethod 
 	def zero(cls, metric: MetricTensor) -> "GeneralFourVector":
 		return cls(metric, "dd", 0, 0, 0, 0)
+	
+	# Math
+
+	def __add__(self, other: "GeneralFourVector") -> "GeneralFourVector":
+		try:
+			self.compute()
+			other.compute()
+		except NotImplemented:
+			pass
+
+		v = GeneralFourVector(self.metric)
+		for i in range(4):
+			v.vector_u[i][j] = self.u(i) + other.u(i)
+			v.vector_d[i][j] = self.d(i) + other.d(i)
+		return v
+
+	def __sub__(self, other: "GeneralFourVector") -> "GeneralFourVector":
+		try:
+			self.compute()
+			other.compute()
+		except NotImplemented:
+			pass
+
+		v = GeneralFourVector(self.metric)
+		for i in range(4):
+			v.vector_u[i][j] = self.u(i) - other.u(i)
+			v.vector_d[i][j] = self.d(i) - other.d(i)
+		return v
+
+	def __mul__(self, other: "GeneralFourVector") -> Symbol:
+		"""
+		Return the square of the distance between the
+		vectors according to the metric.
+
+		The metric used is that of the LEFT operand.
+		I'm not quite sure how to check if two metrics
+		are equal yet, so...
+		"""
+		ds2 = 0
+		for i in range(4):
+			for j in range(4):
+				ds2 = ds2 + self.metric.dd(i, j) * self.u(i) * other.u(j)
+		return ds2
 
 # ===== EINSTEIN FIELD EQUATION COMPONENTS ===== #
 
@@ -434,6 +525,9 @@ class ChristoffelSymbols:
 	def __init__(self, metric: MetricTensor) -> None:
 		self.metric_tensor = metric
 		self.coordinates = metric.coordinates
+
+		if Configuration.autocompute:
+			self.compute()
 
 	def udd(self, i, k, l):
 		"""
@@ -462,29 +556,30 @@ class ChristoffelSymbols:
 		"""
 		Compute all Christoffel symbols of the second kind.
 		"""
-		for i in range(4):
-			for j in range(4):
-				for k in range(4):
-					self.udd(i, j, k)
+		with ProgressBar("Computing Christoffel symbols of the second kind", 64) as pb:
+			for i in range(4):
+				for j in range(4):
+					for k in range(4):
+						self.udd(i, j, k)
+						pb.done()
 
 	def compute_ddd(self):
 		"""
 		Compute all Christoffel symbols of the first kind.
 		"""
-		for i in range(4):
-			for j in range(4):
-				for k in range(4):
-					self.ddd(i, j, k)
+		with ProgressBar("Computing Christoffel symbols of the first kind", 64) as pb:
+			for i in range(4):
+				for j in range(4):
+					for k in range(4):
+						self.ddd(i, j, k)
+						pb.done()
 
 	def compute(self):
 		"""
 		Compute all Christoffel symbols of both kinds.
 		"""
-		for i in range(4):
-			for j in range(4):
-				for k in range(4):
-					self.udd(i, j, k)
-					self.ddd(i, j, k)
+		self.compute_udd()
+		self.compute_ddd()
 
 class RiemannTensor:
 
@@ -512,6 +607,9 @@ class RiemannTensor:
 		self.metric_tensor = christoffel.metric_tensor
 		self.coordinates = self.metric_tensor.coordinates
 		self.christoffel_symbols = christoffel
+
+		if Configuration.autocompute:
+			self.compute()
 
 	def uddd(self, rho, sig, mu, nu):
 		"""
@@ -585,6 +683,9 @@ class RicciTensor:
 	def __init__(self, riemann: RiemannTensor) -> None:
 		self.riemann_tensor = riemann
 		self.metric_tensor = self.riemann_tensor.metric_tensor
+
+		if Configuration.autocompute:
+			self.compute()
 
 	def dd(self, mu: int, nu: int) -> Symbol:
 		"""
@@ -679,6 +780,9 @@ class EinsteinTensor:
 		self.ricci_tensor = ricci
 		self.metric_tensor = self.ricci_tensor.metric_tensor
 
+		if Configuration.autocompute:
+			self.compute()
+
 	def dd(self, mu, nu):
 		"""
 		The Einstein tensor component G_mn.
@@ -719,6 +823,13 @@ class EinsteinTensor:
 			for j in range(4):
 				self.uu(i, j)
 
+	def compute(self):
+		"""
+		Compute all components.
+		"""
+		self.compute_dd()
+		self.compute_uu()
+
 class StressEnergyMomentumTensor:
 
 	"""
@@ -743,6 +854,9 @@ class StressEnergyMomentumTensor:
 		self.units = units
 		self.metric_tensor = einstein.metric_tensor
 		self.einstein_tensor = einstein
+
+		if Configuration.autocompute:
+			self.compute()
 
 	def dd(self, mu, nu):
 		"""
@@ -784,6 +898,13 @@ class StressEnergyMomentumTensor:
 			for j in range(4):
 				self.uu(i, j)
 
+	def compute(self):
+		"""
+		Compute all components.
+		"""
+		self.compute_dd()
+		self.compute_uu()
+
 class GeodesicAccelerationVectors:
 
 	coordinates: CoordinateSystem = None
@@ -794,6 +915,9 @@ class GeodesicAccelerationVectors:
 	def __init__(self, christoffel: ChristoffelSymbols) -> None:
 		self.christoffel_symbols = christoffel
 		self.coordinates = christoffel.coordinates
+
+		if Configuration.autocompute:
+			self.compute()
 
 	def proper(self, i: int) -> Symbol:
 		if self.proper_geodesic_acceleration_vector[i] is None:
@@ -816,6 +940,14 @@ class GeodesicAccelerationVectors:
 	def compute_proper(self):
 		for i in range(4):
 			self.proper(i)
+
+	def compute_coordinate(self):
+		for i in range(4):
+			self.coordinate(i)
+
+	def compute(self):
+		self.compute_proper()
+		self.compute_coordinate()
 
 class Spacetime:
 

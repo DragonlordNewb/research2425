@@ -5,15 +5,20 @@ import sympy
 
 units = sxl.spacetime.UnitSystem.si_ncc()
 coords = sxl.spacetime.CoordinateSystem.trtp()
-metric = sxl.spacetime.MetricTensor.minkowski_trtp(units)
-spacetime = sxl.spacetime.Spacetime(metric, units)
+metric = sxl.spacetime.MetricTensor.schwarzschild_txyz(units)
+st = sxl.spacetime.Spacetime(metric, units)
 
 # Calculate Christoffel symbols
 
-spacetime.christoffel_symbols.compute()
-sympy.pprint(spacetime.christoffel_symbols.christoffel_symbols_udd)
+st.christoffel_symbols.compute()
+sympy.pprint(st.christoffel_symbols.christoffel_symbols_udd)
 
 # Calculate Ricci tensor
 
-spacetime.ricci_tensor.compute()
-sympy.pprint(spacetime.ricci_tensor.ricci_tensor_dd)
+st.ricci_tensor.compute()
+sympy.pprint(st.ricci_tensor.ricci_tensor_dd)
+
+# Calculate Einstein tensor
+
+st.einstein_tensor.compute()
+sympy.pprint(st.einstein_tensor.einstein_tensor_dd)
