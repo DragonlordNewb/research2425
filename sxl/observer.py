@@ -12,9 +12,7 @@ class Observer:
                 initialVelocity: spacetime.GeneralFourVector=None):
         self.metric = metric
         self.position = initialPosition
-        self.coordinate_velocity = initialVelocity \
-        if initialVelocity is not None \
-        else spacetime.GeneralFourVector.zero(self.metric)
-        
-
-class ObserverEngine:
+        if initialVelocity is not None:
+            self.coordinate_velocity = initialVelocity
+        else:
+            self.coordinate_velocity = spacetime.GeneralFourVector.zero(self.metric)

@@ -408,7 +408,7 @@ class GeneralFourVector:
 		return
 
 	@classmethod 
-	def zero(cls, metric: MetricTensor) -> GeneralFourVector:
+	def zero(cls, metric: MetricTensor) -> "GeneralFourVector":
 		return cls(metric, "dd", 0, 0, 0, 0)
 
 # ===== EINSTEIN FIELD EQUATION COMPONENTS ===== #
@@ -608,7 +608,7 @@ class RicciTensor:
 				for sig in range(4):
 					coefficient = coefficient + self.metric_tensor.uu(mu, rho)*self.metric_tensor.uu(nu, sig)*self.dd(rho, sig)
 			self.ricci_tensor_uu[mu, nu] = simplify(coefficient)
-			self.ricci_tensor_uu[nu, mu] = self.ricci_tensor_uu[nu, mu]
+			self.ricci_tensor_uu[nu, mu] = self.ricci_tensor_uu[mu, nu]
 		return self.ricci_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
@@ -650,6 +650,14 @@ class RicciTensor:
 		Compute the Ricci scalar.
 		"""
 		self.scalar()
+
+	def compute(self):
+		"""
+		Compute everything.
+		"""
+		self.compute_dd()
+		self.compute_uu()
+		self.compute_scalar()
 
 class EinsteinTensor:
 
