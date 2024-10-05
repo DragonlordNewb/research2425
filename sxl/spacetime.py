@@ -644,63 +644,44 @@ class RiemannTensor:
 		if Configuration.autocompute:
 			self.compute()
 
-	def uddd(self, i, k, l, m):
+	def uddd(self, rho, sig, mu, nu):
 		"""
 		The Riemann tensor component R^r_smn.
 		"""
-		if not self._riemann_tensor_uddd_computed[i][k][l][m]:
-			# Method using Christoffel symbols
+		if not self._riemann_tensor_uddd_computed[rho][sig][mu][nu]:
 			coefficient = diff(self.christoffel_symbols.udd(rho, sig, nu), self.coordinates.x(mu)) - diff(self.christoffel_symbols.udd(rho, mu, sig), self.coordinates.x(nu))
 			for lam in self.coordinates.dimensions:
 				coefficient = coefficient + (self.christoffel_symbols.udd(lam, sig, nu)*self.christoffel_symbols.udd(rho, lam, mu)) - (self.christoffel_symbols.udd(lam, sig, mu)*self.christoffel_symbols.udd(rho, lam, nu))
 			coefficient = simplify(coefficient)
+			self.riemann_tensor_uddd[rho, sig, mu, nu] = coefficient
+			self._riemann_tensor_uddd_computed[rho][sig][mu][nu] = True
+			# self.riemann_tensor_uddd[mu, nu, rho, sig] = coefficient
+			# self._riemann_tensor_uddd_computed[mu][nu][rho][sig] = True
+			# self.riemann_tensor_uddd[sig, rho, mu, nu] = -coefficient
+			# self._riemann_tensor_uddd_computed[sig][rho][mu][nu] = True
+			# self.riemann_tensor_uddd[rho, sig, nu, mu] = -coefficient
+			# self._riemann_tensor_uddd_computed[rho][sig][nu][mu] = True
+		return self.riemann_tensor_uddd[rho, sig, mu, nu]
 
-			"""
-			# Method by raising lower index
-			coefficient = 0
-			for j in range(4):
-				coefficient = coefficient + self.dddd(j, k, l, m)*self.metric_tensor.uu(i, j)
-			"""
-
-			self.riemann_tensor_uddd[i, k, l, m] = coefficient
-			self._riemann_tensor_uddd_computed[i][k][l][m] = True
-			self.riemann_tensor_uddd[l, m, i, k] = coefficient
-			self._riemann_tensor_uddd_computed[l][m][i][k] = True
-			self.riemann_tensor_uddd[k, i, l, m] = -coefficient
-			self._riemann_tensor_uddd_computed[k][i][l][m] = True
-			self.riemann_tensor_uddd[i, k, m, l] = -coefficient
-			self._riemann_tensor_uddd_computed[i][k][m][l] = True
-		return self.riemann_tensor_uddd[i, k, l, m]
-
-	def dddd(self, i, k, l, m):
+	def dddd(self, rho, sig, mu, nu):
 		"""
 		The Riemann tensor component R_rsmn.
 		"""
-		if not self._riemann_tensor_dddd_computed[i][k][l][m]:
-			# Method using Christoffel symbols
+		if not self._riemann_tensor_dddd_computed[rho][sig][mu][nu]:
 			coefficient = Rational('1/2')*(self.metric_tensor.dd(rho, nu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(mu)) + self.metric_tensor.dd(sig, mu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(nu))\
 			-self.metric_tensor.dd(rho, mu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(nu))-self.metric_tensor.dd(sig, nu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(mu)))
 			for n in range(4):
 				for p in range(4):
 					coefficient = coefficient + self.metric_tensor.dd(n, p)*(self.christoffel_symbols.udd(n, sig, mu)*self.christoffel_symbols.udd(p, rho, nu)-self.christoffel_symbols.udd(n, sig, nu)*self.christoffel_symbols.udd(p, rho, mu))
-			coefficient = simplify(coefficient)
-
-			"""
-			# Method using metric
-			xi, xk, xl, xm = self.coordinates.x(i), self.coordinates.x(k), self.coordinates.x(l), self.coordinates.x(m)
-			coefficient = Rational("1/2")*(self.metric_tensor.dd(i, m).diff(xk, xl) + self.metric_tensor.dd(k, l).diff(xi, xm) - self.metric_tensor.dd(i, l).diff(xk, xm) - self.metric_tensor.dd(k, m).diff(xi, xl))
-			coefficient = simplify(coefficient)
-			"""
-
-			self.riemann_tensor_dddd[i, k, l, m] = coefficient
-			self._riemann_tensor_dddd_computed[i][k][l][m] = True
-			self.riemann_tensor_dddd[l, m, i, k] = coefficient
-			self._riemann_tensor_dddd_computed[l][m][i][k] = True
-			self.riemann_tensor_dddd[k, i, l, m] = -coefficient
-			self._riemann_tensor_dddd_computed[k][i][l][m] = True
-			self.riemann_tensor_dddd[i, k, m, l] = -coefficient
-			self._riemann_tensor_dddd_computed[i][k][m][l] = True
-		return self.riemann_tensor_dddd[i, k, l, m]
+			self.riemann_tensor_dddd[rho, sig, mu, nu] = simplify(coefficient)
+			self._riemann_tensor_dddd_computed[rho][sig][mu][nu] = True
+			self.riemann_tensor_dddd[mu, nu, rho, sig] = self.riemann_tensor_dddd[rho, sig, mu, nu]
+			self._riemann_tensor_dddd_computed[mu][nu][rho][sig] = True
+			self.riemann_tensor_dddd[sig, rho, mu, nu] = -self.riemann_tensor_dddd[rho, sig, mu, nu]
+			self._riemann_tensor_dddd_computed[sig][rho][mu][nu] = True
+			self.riemann_tensor_dddd[rho, sig, nu, mu] = -self.riemann_tensor_dddd[rho, sig, mu, nu]
+			self._riemann_tensor_dddd_computed[rho][sig][nu][mu] = True
+		return self.riemann_tensor_dddd[rho, sig, mu, nu]
 
 	def compute_uddd(self):
 		"""
