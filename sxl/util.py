@@ -69,7 +69,7 @@ class ProgressBar:
 			report_str = ""
 			if report is not None:
 				report_str = "- " + report + "   "
-			tp(self.desc, " "*sep_count + "|" + self.fill*round(fill_count) + " "*space_count + "|", str(self.current) + "/" + str(self.total), "(" + str(round(fill_count*2, 1)) + "%)", repr_time(et - self.st), report_str, "\r")
+			tp(self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", str(self.current) + "/" + str(self.total), "(" + str(round(fill_count*2, 1)) + "%)", repr_time(et - self.st), report_str, "\r")
 		
 	def done(self, report=None):
 		self.current += 1
