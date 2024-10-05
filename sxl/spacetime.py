@@ -291,10 +291,12 @@ class MetricTensor:
 
 		Not yet tested.
 		"""
-		coords = CoordinateSystem.txyz()
+		coords = CoordinateSystem.trtp()
+		r = coords.x(1)
+		r2 = r ** 2
+		theta = coords.x(2)
 		M = Symbol("M")
-		r = sqrt(coords.x(1)**2 + coords.x(2)**2 + coords.x(3)**2)
-		r_s = Symbol("r_s")
+		r_s = 2*units.G*M / (units.c**2)
 		k = 1 - r_s/r
 		return cls(coords, [[units.c**2 * k, 0, 0, 0], [0, -1/k, 0, 0], [0, 0, -r2, 0], [0, 0, 0, -r2 * sin(theta)**2]], "dd")
 
@@ -536,7 +538,7 @@ class ChristoffelSymbols:
 		if not self._christoffel_symbols_udd_computed[i][k][l]:
 			symbol = 0
 			for m in range(4):
-				symbol = symbol + Rational("1/2")*self.metric_tensor.uu(m,i)*(diff(self.metric_tensor.dd(k,m), self.coordinates.x(i))+diff(self.metric_tensor.dd(l,m), self.coordinates.x(k))-diff(self.metric_tensor.dd(k,l), self.coordinates.x(m)))
+				symbol = symbol + Rational("1/2")*self.metric_tensor.uu(m,i)*(diff(self.metric_tensor.dd(l,m), self.coordinates.x(k))+diff(self.metric_tensor.dd(m,k), self.coordinates.x(l))-diff(self.metric_tensor.dd(k,l), self.coordinates.x(m)))
 			self.christoffel_symbols_udd[i,k,l] = simplify(symbol)
 			self._christoffel_symbols_udd_computed[i][k][l] = True
 			self.christoffel_symbols_udd[i,l,k] = self.christoffel_symbols_udd[i,k,l]
@@ -630,34 +632,51 @@ class RiemannTensor:
 		The Riemann tensor component R_rsmn.
 		"""
 		if not self._riemann_tensor_dddd_computed[rho][sig][mu][nu]:
-			coefficient = Rational('1/2')*(self.metric_tensor.dd(rho, nu).diff(self.coordinates.x(sig)).diff(self.coordinates(mu)) + self.metric_tensor.dd(sig, mu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(nu))\
+			coefficient = Rational('1/2')*(self.metric_tensor.dd(rho, nu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(mu)) + self.metric_tensor.dd(sig, mu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(nu))\
 			-self.metric_tensor.dd(rho, mu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(nu))-self.metric_tensor.dd(sig, nu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(mu)))
 			for n in range(4):
 				for p in range(4):
-					coefficient = coefficient + self.metric_tensor.dd(n, p)*(self.christoffel_symbols.udd(n, sig, mu)*self.christoffel_symbols.udd(p, rho, nu)-self.christoffel_symbols(n, sig, nu)*self.christoffel_symbols.udd(p, rho, mu))
+					coefficient = coefficient + self.metric_tensor.dd(n, p)*(self.christoffel_symbols.udd(n, sig, mu)*self.christoffel_symbols.udd(p, rho, nu)-self.christoffel_symbols.udd(n, sig, nu)*self.christoffel_symbols.udd(p, rho, mu))
 			self.riemann_tensor_dddd[rho, sig, mu, nu] = simplify(coefficient)
 			self._riemann_tensor_dddd_computed[rho][sig][mu][nu] = True
+			self.riemann_tensor_dddd[mu, nu, rho, sig] = self.riemann_tensor_dddd[rho, sig, mu, nu]
+			self._riemann_tensor_dddd_computed[mu][nu][rho][sig] = True
+			self.riemann_tensor_dddd[sig, rho, mu, nu] = -self.riemann_tensor_dddd[rho, sig, mu, nu]
+			self._riemann_tensor_dddd_computed[sig][rho][mu][nu] = True
+			self.riemann_tensor_dddd[rho, sig, nu, mu] = -self.riemann_tensor_dddd[rho, sig, mu, nu]
+			self._riemann_tensor_dddd_computed[rho][sig][nu][mu] = True
 		return self.riemann_tensor_dddd[rho, sig, mu, nu]
 
 	def compute_uddd(self):
 		"""
 		Compute all uddd components.
 		"""
-		for i in range(4):
-			for j in range(4):
-				for k in range(4):
-					for l in range(4):
-						self.uddd(i, j, k, l)
+		with ProgressBar("Computing uddd Riemann tensor components", 256) as pb:
+			for i in range(4):
+				for j in range(4):
+					for k in range(4):
+						for l in range(4):
+							self.uddd(i, j, k, l)
+							pb.done()
 
 	def compute_dddd(self):
 		"""
 		Compute all dddd components.
 		"""
-		for i in range(4):
-			for j in range(4):
-				for k in range(4):
-					for l in range(4):
-						self.uddd(i, j, k, l)
+		with ProgressBar("Computing all-covariant Riemann tensor components", 256) as pb:
+			for i in range(4):
+				for j in range(4):
+					for k in range(4):
+						for l in range(4):
+							self.dddd(i, j, k, l)
+							pb.done()
+
+	def compute(self):
+		"""
+		Compute all components.
+		"""
+		self.compute_uddd()
+		self.compute_dddd()
 
 class RicciTensor:
 
@@ -734,17 +753,21 @@ class RicciTensor:
 		"""
 		Compute all covariant components.
 		"""
-		for i in range(4):
-			for j in range(4):
-				self.dd(i, j)
+		with ProgressBar("Computing covariant Ricci tensor components", 16) as pb:
+			for i in range(4):
+				for j in range(4):
+					self.dd(i, j)
+					pb.done()
 
 	def compute_uu(self):
 		"""
 		Compute all contravariant components.
 		"""
-		for i in range(4):
-			for j in range(4):
-				self.uu(i, j)
+		with ProgressBar("Computing contravariant Ricci tensor components", 16) as pb:
+			for i in range(4):
+				for j in range(4):
+					self.uu(i, j)
+					pb.done()
 
 	def compute_scalar(self):
 		"""
@@ -759,6 +782,64 @@ class RicciTensor:
 		self.compute_dd()
 		self.compute_uu()
 		self.compute_scalar()
+
+class WeylTensor:
+
+	"""
+	The WeylTensor class.
+
+	Stores information about all-covariant Weyl
+	tensors. Requires the Ricci tensor (whence
+	it can obtain the Riemann and metric tensors).
+	"""
+
+	metric_tensor: MetricTensor = None
+	riemann_tensor: RiemannTensor = None
+	ricci_tensor: RicciTensor = None
+	weyl_tensor_dddd = tensor.array.MutableDenseNDimArray(range(256), (4, 4, 4, 4))
+	_weyl_tensor_dddd_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
+
+	def __init__(self, ricci: RicciTensor) -> None:
+		self.metric_tensor = ricci.metric_tensor
+		self.riemann_tensor = ricci.riemann_tensor
+
+		if Configuration.autocompute:
+			self.compute()
+
+	def dddd(self, i, k, l, m):
+		"""
+		The Weyl tensor component C_iklm.
+		"""
+		if not self._weyl_tensor_dddd_computed[i][k][l][m]:
+			coeff = self.riemann_tensor.dddd(i, k, l, m) + (Rational("1/2")*(
+				self.ricci_tensor.dd(i, m)*self.metric_tensor.dd(k, l) - self.ricci_tensor.dd(i, l)*self.metric_tensor.dd(k, m) \
+				+ self.ricci_tensor.dd(k, l)*self.metric_tensor.dd(i, m) - self.ricci_tensor.dd(k, m)*self.metric_tensor.dd(i, l)
+			)) + (Rational("1/6")*self.ricci_tensor.scalar()*(self.metric_tensor.dd(i, l)*self.metric_tensor.dd(k, m) - self.metric_tensor.dd(i, m)*self.metric_tensor.dd(k, l)))
+			self.weyl_tensor_dddd[i, k, l, m] = coeff
+			self._weyl_tensor_dddd_computed[i][k][l][m] = True
+			self.weyl_tensor_dddd[k, i, l, m] = -coeff
+			self._weyl_tensor_dddd_computed[k][i][l][m] = True
+			self.weyl_tensor_dddd[i, k, m, l] = -coeff
+			self._weyl_tensor_dddd_computed[i][k][m][l] = True
+		return self.weyl_tensor_dddd[i, k, l, m]
+
+	def compute_dddd(self):
+		"""
+		Compute all dddd components.
+		"""
+		with ProgressBar("Computing all-covariant Weyl tensor components", 256) as pb:
+			for i in range(4):
+				for j in range(4):
+					for k in range(4):
+						for l in range(4):
+							self.dddd(i, j, k, l)
+							pb.done()
+
+	def compute(self):
+		"""
+		Compute all components.
+		"""
+		self.compute_dddd()
 
 class EinsteinTensor:
 
@@ -811,17 +892,21 @@ class EinsteinTensor:
 		"""
 		Compute all covariant components.
 		"""
-		for i in range(4):
-			for j in range(4):
-				self.dd(i, j)
+		with ProgressBar("Computing covariant Einstein tensor components", 16) as pb:
+			for i in range(4):
+				for j in range(4):
+					self.dd(i, j)
+					pb.done()
 
 	def compute_uu(self):
 		"""
 		Compute all contravariant components.
 		"""
-		for i in range(4):
-			for j in range(4):
-				self.uu(i, j)
+		with ProgressBar("Computing contravariant Einstein tensor components", 16) as pb:
+			for i in range(4):
+				for j in range(4):
+					self.uu(i, j)
+					pb.done()
 
 	def compute(self):
 		"""
@@ -873,7 +958,7 @@ class StressEnergyMomentumTensor:
 		"""
 		if self.stress_energy_momentum_tensor_uu[mu, nu] is None:
 			self.stress_energy_momentum_tensor_uu[mu, nu] = simplify((self.einstein_tensor.uu(mu, nu) + self.units.Lambda*self.metric_tensor.uu(mu, nu)) / self.units.kappa)
-			self.stress_energy_momentum_tensor_uu[nu, mu] = self.stress_energy_momentum_tensor_uu[mu. nu]
+			self.stress_energy_momentum_tensor_uu[nu, mu] = self.stress_energy_momentum_tensor_uu[mu, nu]
 		return self.stress_energy_momentum_tensor_uu[mu, nu]
 
 	def ud(self, mu: int, nu: int) -> Symbol:
@@ -929,13 +1014,13 @@ class GeodesicAccelerationVectors:
 		return self.proper_geodesic_acceleration_vector[i]
 
 	def coordinate(self, i: int) -> Symbol:
-		if self.proper_geodesic_acceleration_vector[i] is None:
+		if self.coordinate_geodesic_acceleration_vector[i] is None:
 			accel = 0
 			for mu in range(4):
 				for nu in range(4):
 					accel = accel - self.christoffel_symbols.udd(0, mu, nu)*self.coordinates.v(i)*self.coordinates.v(mu)*self.coordinates.v(nu) - self.christoffel_symbols.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
-			self.proper_geodesic_acceleration_vector[i] = accel
-		return self.proper_geodesic_acceleration_vector[i]
+			self.coordinate_geodesic_acceleration_vector[i] = accel
+		return self.coordinate_geodesic_acceleration_vector[i]
 	
 	def compute_proper(self):
 		for i in range(4):
@@ -965,6 +1050,7 @@ class Spacetime:
 	christoffel_symbols: ChristoffelSymbols = None
 	riemann_tensor: RiemannTensor = None
 	ricci_tensor: RicciTensor = None
+	weyl_tensor: WeylTensor = None
 	einstein_tensor: EinsteinTensor = None
 	stress_energy_momentum_tensor: StressEnergyMomentumTensor = None
 	geodesic_acceleration_vectors: GeodesicAccelerationVectors = None
@@ -978,6 +1064,7 @@ class Spacetime:
 		self.christoffel_symbols = ChristoffelSymbols(self.metric_tensor)
 		self.riemann_tensor = RiemannTensor(self.christoffel_symbols)
 		self.ricci_tensor = RicciTensor(self.riemann_tensor)
+		self.weyl_tensor = WeylTensor(self.ricci_tensor)
 		self.einstein_tensor = EinsteinTensor(self.ricci_tensor)
 		self.stress_energy_momentum_tensor = StressEnergyMomentumTensor(self.einstein_tensor, self.units)
 		self.geodesic_acceleration_vectors = GeodesicAccelerationVectors(self.christoffel_symbols)
