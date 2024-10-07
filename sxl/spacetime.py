@@ -9,6 +9,7 @@ METRIC_DERIVATIVES = "metric derivatives"
 CHRISTOFFEL_SYMBOLS = "christoffel symbols"
 INDEX_RAISING = "index raising"
 RIEMANN_UDDD_MODE = CHRISTOFFEL_SYMBOLS
+PB_INDENT = 0
 
 class UnitSystem:
 
@@ -625,6 +626,7 @@ class ChristoffelSymbols:
 		"""
 		Compute all Christoffel symbols of the second kind.
 		"""
+		
 		with ProgressBar("Computing Christoffel symbols of the second kind", 64) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -638,6 +640,7 @@ class ChristoffelSymbols:
 		"""
 		Compute all Christoffel symbols of the first kind.
 		"""
+				
 		with ProgressBar("Computing Christoffel symbols of the first kind", 64) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -721,6 +724,7 @@ class RiemannTensor:
 		"""
 		Compute all uddd components.
 		"""
+				
 		with ProgressBar("Computing uddd Riemann tensor components", 256) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -733,6 +737,7 @@ class RiemannTensor:
 		"""
 		Compute all dddd components.
 		"""
+				
 		with ProgressBar("Computing all-covariant Riemann tensor components", 256) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -823,6 +828,7 @@ class RicciTensor:
 		"""
 		Compute all covariant components.
 		"""
+				
 		with ProgressBar("Computing covariant Ricci tensor components", 16) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -833,6 +839,7 @@ class RicciTensor:
 		"""
 		Compute all contravariant components.
 		"""
+				
 		with ProgressBar("Computing contravariant Ricci tensor components", 16) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -872,6 +879,7 @@ class WeylTensor:
 	def __init__(self, ricci: RicciTensor) -> None:
 		self.metric_tensor = ricci.metric_tensor
 		self.riemann_tensor = ricci.riemann_tensor
+		self.ricci_tensor = ricci
 
 		if Configuration.autocompute:
 			self.compute()
@@ -897,6 +905,7 @@ class WeylTensor:
 		"""
 		Compute all dddd components.
 		"""
+				
 		with ProgressBar("Computing all-covariant Weyl tensor components", 256) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -962,6 +971,7 @@ class EinsteinTensor:
 		"""
 		Compute all covariant components.
 		"""
+				
 		with ProgressBar("Computing covariant Einstein tensor components", 16) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -972,6 +982,7 @@ class EinsteinTensor:
 		"""
 		Compute all contravariant components.
 		"""
+				
 		with ProgressBar("Computing contravariant Einstein tensor components", 16) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -1041,6 +1052,7 @@ class StressEnergyMomentumTensor:
 		"""
 		Compute all covariant components.
 		"""
+				
 		with ProgressBar("Computing covariant SEM tensor components", 16) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -1051,6 +1063,7 @@ class StressEnergyMomentumTensor:
 		"""
 		Compute all contravariant components.
 		"""
+				
 		with ProgressBar("Computing contravariant SEM tensor components", 16) as pb:
 			for i in range(4):
 				for j in range(4):
@@ -1142,3 +1155,35 @@ class Spacetime:
 		self.einstein_tensor = EinsteinTensor(self.ricci_tensor)
 		self.stress_energy_momentum_tensor = StressEnergyMomentumTensor(self.einstein_tensor, self.units)
 		self.geodesic_acceleration_vectors = GeodesicAccelerationVectors(self.christoffel_symbols)
+
+	def solve(self):
+		"""
+		Solve all the available tensors, vectors, etc.
+		to obtain all information that we can about
+		the spacetime.
+
+		Adds a nice little display, too!
+		"""
+
+		print("Solving Einstein field equations & obtaining relevant spacetime information ...")
+		st = time.time()
+		ProgressBar.indent = 1
+		self.christoffel_symbols.compute()
+		self.riemann_tensor.compute()
+		self.ricci_tensor.compute()
+		self.weyl_tensor.compute()
+		self.einstein_tensor.compute()
+		self.stress_energy_momentum_tensor.compute()
+		self.geodesic_acceleration_vectors.compute()
+		et = time.time()
+		dt = et - st
+		ProgressBar.indent = 0
+		print("Solution complete, ancillary data found. Total elapsed computation time: " + str(repr_time(dt)))
+
+	def compute(self):
+		"""
+		To be consistent about naming, since all the
+		tensors and everything have .compute() as a
+		method.
+		"""
+		self.solve()

@@ -46,11 +46,12 @@ class ProgressBar:
 	fill: str
 	desc: str
 	st = None
+	indent = 0
 
-	def __init__(self, desc: str, total: int, fill: str="#"):
+	def __init__(self, desc: str, total: int):
 		self.desc = desc
 		self.total = total
-		self.fill = fill
+		self.fill = "#"
 
 	def __enter__(self):
 		self.st = time.time()
@@ -69,15 +70,10 @@ class ProgressBar:
 			report_str = ""
 			if report is not None:
 				report_str = "- " + report + "   "
-			tp(self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", str(self.current) + "/" + str(self.total), "(" + str(round(fill_count*2, 1)) + "%)", repr_time(et - self.st), report_str, "\r")
+			ratio_str = str(self.current) + "/" + str(self.total)
+			tp("    "*self.indent + self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", 
+			ratio_str, " "*(8 - len(ratio_str)), "(" + str(round(fill_count*2, 1)) + "%)", repr_time(et - self.st), report_str, "\r")
 		
 	def done(self, report=None):
 		self.current += 1
 		self._update_bar(report)
-
-class CustomFunction(sp.Function):
-	def __repr__(self):
-		return 'F'
-	
-	def __str__(self):
-		return 'F'
