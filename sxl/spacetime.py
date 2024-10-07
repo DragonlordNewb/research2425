@@ -208,6 +208,8 @@ class MetricTensor:
 		"""
 		return self.metric_determinant_dd
 
+	# Examples
+
 	@classmethod
 	def minkowski_txyz(cls, units: UnitSystem):
 		"""
@@ -530,7 +532,15 @@ class GeneralFourVector:
 			v.vector_d[i] = self.d(i) - other.d(i)
 		return v
 
-	def __mul__(self, other: "GeneralFourVector") -> Symbol:
+	def __mul__(self, scal: float) -> "GeneralFourVector":
+		self.compute()
+		v = GeneralFourVector(self.metric_tensor)
+		for i in range(4):
+			v.vector_u[i] = self.u(i) * scal
+			v.vector_d[i] = self.d(i) * scal
+		return v
+
+	def __matmul__(self, other: "GeneralFourVector") -> Symbol:
 		"""
 		Return the square of the distance between the
 		vectors according to the metric.
@@ -1070,6 +1080,7 @@ class StressEnergyMomentumTensor:
 
 class GeodesicAccelerationVectors:
 
+	units: UnitSystem = None
 	coordinates: CoordinateSystem = None
 	christoffel_symbols: ChristoffelSymbols = None
 	proper_geodesic_acceleration_vector = [None, None, None, None]
@@ -1078,20 +1089,31 @@ class GeodesicAccelerationVectors:
 	def __init__(self, christoffel: ChristoffelSymbols) -> None:
 		self.christoffel_symbols = christoffel
 		self.coordinates = christoffel.coordinates
+		self.units = self.christoffel_symbols.metric_tensor.units
 
 		if Configuration.autocompute:
 			self.compute()
 
 	def proper(self, i: int) -> Symbol:
+		"""
+		ith component of proper acceleration,
+		dx^i/dtau.
+		"""
 		if self.proper_geodesic_acceleration_vector[i] is None:
 			accel = 0
 			for mu in range(4):
 				for nu in range(4):
 					accel = accel - self.christoffel_symbols.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
-			self.proper_geodesic_acceleration_vector[i] = accel
+			self.proper_geodesic_acceleration_vector[i] = accel / self.units.c**2
 		return self.proper_geodesic_acceleration_vector[i]
 
 	def coordinate(self, i: int) -> Symbol:
+		"""
+		ith component of coordinate acceleration,
+		dx^i/dt.
+		
+		Doesn't make much sense for i=0=t. dt/dt=1?
+		"""
 		if self.coordinate_geodesic_acceleration_vector[i] is None:
 			accel = 0
 			for mu in range(4):
