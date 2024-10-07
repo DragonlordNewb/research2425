@@ -153,7 +153,8 @@ class MetricTensor:
 	metric_tensor_dd = Matrix([[None for i in range(4)] for j in range(4)])
 	metric_determinant_uu = None
 	metric_determinant_dd = None
-	singularities = [None for i in range(4)]
+	singularities_list = []
+	_located_singularities = False
 	_is_diagonal = None
 
 	def __init__(self, coords: CoordinateSystem, tensor: Matrix, indexing: str) -> None:
@@ -209,7 +210,7 @@ class MetricTensor:
 		"""
 		return self.metric_determinant_dd
 
-	def locate_singularities(self, i: int):
+	def singularities(self, i: int):
 		"""
 		Determines if singularities exist.
 		Returns whether or not there are any after
@@ -225,19 +226,22 @@ class MetricTensor:
 		are.
 		"""
 
-		if self.is_diagonal():
-			"""
-			In a diagonal metric, there is a certain
-			type of pathology when the metric components
-			go to zero. For example, the Schwarzschild
-			surface, which doesn't necessarily constitute
-			a "singularity" but is certainly bad enough
-			that an observer shouldn't try and cross it
-			for our purposes.
+		if self._located_singularities:
+			return self.singularities_list
 
-			Find all the zeros of the metric components
-			if they exist.
-			"""
+		coords = self.coordinates.coordinates
+
+		determinant_pathologies = solve(self.det_uu(), *coords)
+		component_pathologies = []
+		current_component_pathologies = []
+		for i in range(4):
+			for j in range(4):
+				current_component_pathologies = solve(self.dd(i, j), *coords)
+				for pathology in current_component_pathologies:
+					component_pathologies.append(pathology)
+
+		for pathology in determinant_pathologies + component_pathologies:
+			self.singularities_list.append(pathology)
 
 	@classmethod
 	def minkowski_txyz(cls, units: UnitSystem):
