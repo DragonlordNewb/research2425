@@ -8,6 +8,20 @@ def tp(*args):
 	print(*args, end="")
 	sys.stdout.flush()
 
+PURPLE = '\033[95m'
+CYAN = '\033[96m'
+DARKCYAN = '\033[36m'
+BLUE = '\033[94m'
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+RED = '\033[91m'
+BOLD = '\033[1m'
+UNDERLINE = '\033[4m'
+END = '\033[0m'
+
+def colorprint(s: str, *colors):
+	print("".join(colors) + s + END)
+
 class Configuration:
 
 	verbose: bool = True
@@ -71,7 +85,7 @@ class ProgressBar:
 			if report is not None:
 				report_str = "- " + report + "   "
 			ratio_str = str(self.current) + "/" + str(self.total)
-			tp("    "*self.indent + self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", 
+			tp("	"*self.indent + self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", 
 			ratio_str, " "*(8 - len(ratio_str)), "(" + str(round(fill_count*2, 1)) + "%)", repr_time(et - self.st), report_str, "\r")
 		
 	def done(self, report=None):

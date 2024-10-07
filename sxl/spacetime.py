@@ -1086,10 +1086,10 @@ class GeodesicAccelerationVectors:
 	proper_geodesic_acceleration_vector = [None, None, None, None]
 	coordinate_geodesic_acceleration_vector = [None, None, None, None]
 
-	def __init__(self, christoffel: ChristoffelSymbols) -> None:
+	def __init__(self, christoffel: ChristoffelSymbols, units: UnitSystem) -> None:
 		self.christoffel_symbols = christoffel
 		self.coordinates = christoffel.coordinates
-		self.units = self.christoffel_symbols.metric_tensor.units
+		self.units = units
 
 		if Configuration.autocompute:
 			self.compute()
@@ -1167,7 +1167,7 @@ class Spacetime:
 		self.weyl_tensor = WeylTensor(self.ricci_tensor)
 		self.einstein_tensor = EinsteinTensor(self.ricci_tensor)
 		self.stress_energy_momentum_tensor = StressEnergyMomentumTensor(self.einstein_tensor, self.units)
-		self.geodesic_acceleration_vectors = GeodesicAccelerationVectors(self.christoffel_symbols)
+		self.geodesic_acceleration_vectors = GeodesicAccelerationVectors(self.christoffel_symbols, self.units)
 
 	def solve(self):
 		"""
@@ -1200,3 +1200,8 @@ class Spacetime:
 		method.
 		"""
 		self.solve()
+
+	def analyze(self):
+		"""
+		Open a GUI analysis system.
+		"""
