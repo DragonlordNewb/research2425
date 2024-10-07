@@ -427,10 +427,10 @@ class GeneralFourVector:
 	update_alternate_indices = False
 	vector_u = [None, None, None, None]
 	vector_d = [None, None, None, None]
-	metric = None
+	metric_tensor = None
 
 	def __init__(self, metric: MetricTensor, indexing: str=None, *v):
-		self.metric = metric
+		self.metric_tensor = metric
 		if len(v) == 0:
 			return
 		elif len(v) != 4:
@@ -440,6 +440,12 @@ class GeneralFourVector:
 		elif indexing == "d":
 			self.vector_d = v
 
+	def repr(self) -> str:
+		return "<" + ", ".join(map(str, [self.u(i) for i in range(4)])) + ">"
+	
+	def __repr__(self) -> str:
+		return self.repr()
+
 	def find_u(self, i):
 		raise NotImplemented("GeneralFourVector contravariant finder not implemented.")
 
@@ -448,12 +454,24 @@ class GeneralFourVector:
 
 	def u(self, i):
 		if self.vector_u[i] is None:
-			self.vector_u[i] = self.find_u(i)
+			if self.vector_d[i] is not None:
+				component = 0
+				for j in range(4):
+					component = component + self.metric_tensor.uu(i, j)*self.d(j)
+				self.vector_u[i] = component
+			else:
+				self.vector_u[i] = self.find_u(i)
 		return self.vector_u[i]
 
 	def d(self, i):
 		if self.vector_d[i] is None:
-			self.vector_d[i] = self.find_d(i)
+			if self.vector_u[i] is not None:
+				component = 0
+				for j in range(4):
+					component = component + self.metric_tensor.dd(i, j)*self.u(j)
+				self.vector_d[i] = component
+			else:
+				self.vector_d[i] = self.find_d(i)
 		return self.vector_d[i]
 
 	def compute_u(self):
@@ -463,6 +481,10 @@ class GeneralFourVector:
 	def compute_d(self):
 		for i in range(4):
 			self.d(i)
+
+	def compute(self):
+		self.compute_u()
+		self.compute_d()
 
 	def raise_index(self, i):
 		"""
@@ -489,10 +511,10 @@ class GeneralFourVector:
 		except NotImplemented:
 			pass
 
-		v = GeneralFourVector(self.metric)
+		v = GeneralFourVector(self.metric_tensor)
 		for i in range(4):
-			v.vector_u[i][j] = self.u(i) + other.u(i)
-			v.vector_d[i][j] = self.d(i) + other.d(i)
+			v.vector_u[i] = self.u(i) + other.u(i)
+			v.vector_d[i] = self.d(i) + other.d(i)
 		return v
 
 	def __sub__(self, other: "GeneralFourVector") -> "GeneralFourVector":
@@ -502,10 +524,10 @@ class GeneralFourVector:
 		except NotImplemented:
 			pass
 
-		v = GeneralFourVector(self.metric)
+		v = GeneralFourVector(self.metric_tensor)
 		for i in range(4):
-			v.vector_u[i][j] = self.u(i) - other.u(i)
-			v.vector_d[i][j] = self.d(i) - other.d(i)
+			v.vector_u[i]  = self.u(i) - other.u(i)
+			v.vector_d[i] = self.d(i) - other.d(i)
 		return v
 
 	def __mul__(self, other: "GeneralFourVector") -> Symbol:
@@ -1137,7 +1159,6 @@ class Spacetime:
 		print("Solving Einstein field equations & obtaining relevant spacetime information ...")
 		st = time.time()
 		ProgressBar.indent = 1
-		self.metric_tensor.singularities()
 		self.christoffel_symbols.compute()
 		self.riemann_tensor.compute()
 		self.ricci_tensor.compute()
