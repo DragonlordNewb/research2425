@@ -74,3 +74,10 @@ class ProgressBar:
 	def done(self, report=None):
 		self.current += 1
 		self._update_bar(report)
+
+class CustomFunction(sp.Function):
+	def __repr__(self):
+		return 'F'
+	
+	def __str__(self):
+		return 'F'

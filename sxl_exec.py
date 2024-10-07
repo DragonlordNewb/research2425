@@ -5,13 +5,14 @@ import sympy
 
 units = sxl.spacetime.UnitSystem.si_ncc()
 coords = sxl.spacetime.CoordinateSystem.trtp()
-metric = sxl.spacetime.MetricTensor.schwarzschild_trtp(units)
+metric = sxl.spacetime.MetricTensor.lvfd_trtz(units)
 st = sxl.spacetime.Spacetime(metric, units)
 
 # Calculate Christoffel symbols
 
 st.christoffel_symbols.compute()
 sympy.pprint(st.christoffel_symbols.christoffel_symbols_udd)
+sympy.pprint(st.christoffel_symbols.christoffel_symbols_ddd)
 
 # Calculate Riemann  tensor
 

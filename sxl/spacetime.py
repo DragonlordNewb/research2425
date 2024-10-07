@@ -5,6 +5,11 @@ from sxl.util import *
 
 simplefilter("ignore") # I don't care that SymPy doesn't want None in its matrices.
 
+METRIC_DERIVATIVES = "metric derivatives"
+CHRISTOFFEL_SYMBOLS = "christoffel symbols"
+INDEX_RAISING = "index raising"
+RIEMANN_UDDD_MODE = CHRISTOFFEL_SYMBOLS
+
 class UnitSystem:
 
 	"""
@@ -328,8 +333,21 @@ class MetricTensor:
 		Not yet tested.
 		"""
 		coords = CoordinateSystem.txyz()
-		phi = Function("phi")(coords.x(1), coords.x(2), coords.x(3))
+		phi = Function("phi")(*coords.coordinates) # Function("phi")(coords.x(0), coords.x(1), coords.x(2), coords.x(3))
 		return cls(coords, [[units.c**2, phi/2, 0, 0], [phi/2, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1]], "dd")
+
+	@classmethod
+	def lvfd_trtz(cls, units=UnitSystem.si()):
+		"""
+		The lambdavacuum frame-dragging warp drive
+		in alternative cylindrical coordinates.
+
+		Not yet tested.
+		"""
+		coords = CoordinateSystem.trtz()
+		phi = Function("phi")(coords.x(1), coords.x(3))
+		r = coords.x(1)
+		return cls(coords, [[units.c**2, phi/2, 0, 0], [phi/2, -1, 0, 0], [0, 0, -r**2, 0], [0, 0, 0, -1]], "dd")
 
 class GeneralTensor:
 
@@ -550,10 +568,16 @@ class ChristoffelSymbols:
 
 	coordinates: CoordinateSystem = None
 	metric_tensor: MetricTensor = None
+
 	christoffel_symbols_udd = tensor.array.MutableDenseNDimArray(range(64), (4, 4, 4))
 	_christoffel_symbols_udd_computed = [[[False for i in range(4)] for j in range(4)] for k in range(4)]
 	christoffel_symbols_ddd = tensor.array.MutableDenseNDimArray(range(64), (4, 4, 4))
 	_christoffel_symbols_ddd_computed = [[[False for i in range(4)] for j in range(4)] for k in range(4)]
+
+	christoffel_symbols_udd_diff = tensor.array.MutableDenseNDimArray(range(256), (4, 4, 4, 4))
+	_christoffel_symbols_udd_diff_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
+	christoffel_symbols_ddd_diff = tensor.array.MutableDenseNDimArray(range(256), (4, 4, 4, 4))
+	_christoffel_symbols_ddd_diff_computed = [[[[False for i in range(4)] for j in range(4)] for k in range(4)] for l in range(4)]
 
 	def __init__(self, metric: MetricTensor) -> None:
 		self.metric_tensor = metric
@@ -575,6 +599,12 @@ class ChristoffelSymbols:
 			self.christoffel_symbols_udd[i,l,k] = self.christoffel_symbols_udd[i,k,l]
 			self._christoffel_symbols_udd_computed[i][l][k] = True
 		return self.christoffel_symbols_udd[i, k, l]
+
+	def udd_diff(self, i, k, l, m):
+		if not self._christoffel_symbols_udd_diff_computed[i][k][l][m]:
+			self.christoffel_symbols_udd_diff[i, k, l, m] = self.udd(i, k, l).diff(self.coordinates.x(m))
+			self._christoffel_symbols_udd_diff_computed[i][k][l][m] = True
+		return self.christoffel_symbols_udd_diff[i, k, l, m]
 	
 	def ddd(self, i, k, l):
 		"""
@@ -585,6 +615,12 @@ class ChristoffelSymbols:
 			self._christoffel_symbols_ddd_computed[i][k][l] = True
 		return self.christoffel_symbols_ddd[i, k, l]
 
+	def ddd_diff(self, i, k, l, m):
+		if not self._christoffel_symbols_ddd_diff_computed[i][k][l][m]:
+			self.christoffel_symbols_ddd_diff[i, k, l, m] = self.ddd(i, k, l).diff(self.coordinates.x(m))
+			self._christoffel_symbols_ddd_diff_computed[i][k][l][m] = True
+		return self.christoffel_symbols_ddd_diff[i, k, l, m]
+
 	def compute_udd(self):
 		"""
 		Compute all Christoffel symbols of the second kind.
@@ -594,6 +630,8 @@ class ChristoffelSymbols:
 				for j in range(4):
 					for k in range(4):
 						self.udd(i, j, k)
+						for l in range(4):
+							self.udd_diff(i, j, k, l)
 						pb.done()
 
 	def compute_ddd(self):
@@ -605,6 +643,8 @@ class ChristoffelSymbols:
 				for j in range(4):
 					for k in range(4):
 						self.ddd(i, j, k)
+						for l in range(4):
+							self.ddd_diff(i, j, k, l)
 						pb.done()
 
 	def compute(self):
@@ -644,44 +684,38 @@ class RiemannTensor:
 		if Configuration.autocompute:
 			self.compute()
 
-	def uddd(self, rho, sig, mu, nu):
+	def uddd(self, i, k, l, m):
 		"""
 		The Riemann tensor component R^r_smn.
 		"""
-		if not self._riemann_tensor_uddd_computed[rho][sig][mu][nu]:
-			coefficient = diff(self.christoffel_symbols.udd(rho, sig, nu), self.coordinates.x(mu)) - diff(self.christoffel_symbols.udd(rho, mu, sig), self.coordinates.x(nu))
-			for lam in self.coordinates.dimensions:
-				coefficient = coefficient + (self.christoffel_symbols.udd(lam, sig, nu)*self.christoffel_symbols.udd(rho, lam, mu)) - (self.christoffel_symbols.udd(lam, sig, mu)*self.christoffel_symbols.udd(rho, lam, nu))
-			coefficient = simplify(coefficient)
-			self.riemann_tensor_uddd[rho, sig, mu, nu] = coefficient
-			self._riemann_tensor_uddd_computed[rho][sig][mu][nu] = True
-			# self.riemann_tensor_uddd[mu, nu, rho, sig] = coefficient
-			# self._riemann_tensor_uddd_computed[mu][nu][rho][sig] = True
-			# self.riemann_tensor_uddd[sig, rho, mu, nu] = -coefficient
-			# self._riemann_tensor_uddd_computed[sig][rho][mu][nu] = True
-			# self.riemann_tensor_uddd[rho, sig, nu, mu] = -coefficient
-			# self._riemann_tensor_uddd_computed[rho][sig][nu][mu] = True
-		return self.riemann_tensor_uddd[rho, sig, mu, nu]
+		if not self._riemann_tensor_uddd_computed[i][k][l][m]:
+			coefficient = 0
+			if RIEMANN_UDDD_MODE == CHRISTOFFEL_SYMBOLS:
+				coefficient = self.christoffel_symbols.udd_diff(i, m, k, l) - self.christoffel_symbols.udd_diff(i, l, k, m)
+				for j in range(4):
+					p1 = self.christoffel_symbols.udd(i, l, j) * self.christoffel_symbols.udd(j, m, k)
+					p2 = self.christoffel_symbols.udd(i, m, j) * self.christoffel_symbols.udd(j, l, k)
+					coefficient = coefficient + p1 - p2
+					coefficient = simplify(coefficient)
+			elif RIEMANN_UDDD_MODE == INDEX_RAISING:
+				for j in range(4):
+					coefficient = coefficient + self.metric_tensor.uu(j, rho)*self.dddd(j, k, l, m)
+				coefficient = simplify(coefficient)
+			self.riemann_tensor_uddd[i, k, l, m] = coefficient
+			self._riemann_tensor_uddd_computed[i][k][l][m] = True
+		return self.riemann_tensor_uddd[i, k, l, m]
 
-	def dddd(self, rho, sig, mu, nu):
+	def dddd(self, i, k, l, m):
 		"""
 		The Riemann tensor component R_rsmn.
 		"""
-		if not self._riemann_tensor_dddd_computed[rho][sig][mu][nu]:
-			coefficient = Rational('1/2')*(self.metric_tensor.dd(rho, nu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(mu)) + self.metric_tensor.dd(sig, mu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(nu))\
-			-self.metric_tensor.dd(rho, mu).diff(self.coordinates.x(sig)).diff(self.coordinates.x(nu))-self.metric_tensor.dd(sig, nu).diff(self.coordinates.x(rho)).diff(self.coordinates.x(mu)))
-			for n in range(4):
-				for p in range(4):
-					coefficient = coefficient + self.metric_tensor.dd(n, p)*(self.christoffel_symbols.udd(n, sig, mu)*self.christoffel_symbols.udd(p, rho, nu)-self.christoffel_symbols.udd(n, sig, nu)*self.christoffel_symbols.udd(p, rho, mu))
-			self.riemann_tensor_dddd[rho, sig, mu, nu] = simplify(coefficient)
-			self._riemann_tensor_dddd_computed[rho][sig][mu][nu] = True
-			self.riemann_tensor_dddd[mu, nu, rho, sig] = self.riemann_tensor_dddd[rho, sig, mu, nu]
-			self._riemann_tensor_dddd_computed[mu][nu][rho][sig] = True
-			self.riemann_tensor_dddd[sig, rho, mu, nu] = -self.riemann_tensor_dddd[rho, sig, mu, nu]
-			self._riemann_tensor_dddd_computed[sig][rho][mu][nu] = True
-			self.riemann_tensor_dddd[rho, sig, nu, mu] = -self.riemann_tensor_dddd[rho, sig, mu, nu]
-			self._riemann_tensor_dddd_computed[rho][sig][nu][mu] = True
-		return self.riemann_tensor_dddd[rho, sig, mu, nu]
+		if not self._riemann_tensor_dddd_computed[i][k][l][m]:
+			xi, xk, xl, xm = self.coordinates.x(i), self.coordinates.x(k), self.coordinates.x(l), self.coordinates.x(m)
+			coefficient = Rational("1/2")*(self.metric_tensor.dd(i, m).diff(xk, xl) + self.metric_tensor.dd(k, l).diff(xi, xm) - self.metric_tensor.dd(i, l).diff(xk, xm) - self.metric_tensor.dd(k, m).diff(xi, xl))
+			# coefficient = simplify(coefficient)
+			self.riemann_tensor_dddd[i, k, l, m] = simplify(coefficient)
+			self._riemann_tensor_dddd_computed[i][k][l][m] = True
+		return self.riemann_tensor_dddd[i, k, l, m]
 
 	def compute_uddd(self):
 		"""
