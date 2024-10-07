@@ -153,8 +153,6 @@ class MetricTensor:
 	metric_tensor_dd = Matrix([[None for i in range(4)] for j in range(4)])
 	metric_determinant_uu = None
 	metric_determinant_dd = None
-	singularities_list = []
-	_located_singularities = False
 	_is_diagonal = None
 
 	def __init__(self, coords: CoordinateSystem, tensor: Matrix, indexing: str) -> None:
@@ -209,39 +207,6 @@ class MetricTensor:
 		The determinant of g_ij.
 		"""
 		return self.metric_determinant_dd
-
-	def singularities(self, i: int):
-		"""
-		Determines if singularities exist.
-		Returns whether or not there are any after
-		putting the singularity conditions in the
-		MetricTensor.singularities variable.
-
-		Singularities occur where the metric determinant
-		is zero (or where the metric is otherwise
-		pathological for the given coordinate
-		system). Using SymPy's algebraic solvers,
-		we find those points for each coordinate
-		to determine where the singular surfaces
-		are.
-		"""
-
-		if self._located_singularities:
-			return self.singularities_list
-
-		coords = self.coordinates.coordinates
-
-		determinant_pathologies = solve(self.det_uu(), *coords)
-		component_pathologies = []
-		current_component_pathologies = []
-		for i in range(4):
-			for j in range(4):
-				current_component_pathologies = solve(self.dd(i, j), *coords)
-				for pathology in current_component_pathologies:
-					component_pathologies.append(pathology)
-
-		for pathology in determinant_pathologies + component_pathologies:
-			self.singularities_list.append(pathology)
 
 	@classmethod
 	def minkowski_txyz(cls, units: UnitSystem):
@@ -1172,6 +1137,7 @@ class Spacetime:
 		print("Solving Einstein field equations & obtaining relevant spacetime information ...")
 		st = time.time()
 		ProgressBar.indent = 1
+		self.metric_tensor.singularities()
 		self.christoffel_symbols.compute()
 		self.riemann_tensor.compute()
 		self.ricci_tensor.compute()
