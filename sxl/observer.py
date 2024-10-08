@@ -6,7 +6,8 @@ class Observer:
 
     metric_tensor: spacetime.MetricTensor = None
     zero: spacetime.GeneralFourVector = None
-    position: spacetime.GeneralFourVector = None # Current position, X
+    proper_time_lapse: float = 0
+    position: spacetime.GeneralFourVector = None # Current position, X (with coordinate time)
     proper_velocity: spacetime.GeneralFourVector = None # Current proper linear velocity, u=dX/dtau
     angle: spacetime.GeneralFourVector = None # Current angular position, theta
     proper_rotation: spacetime.GeneralFourVector = None # Current angular velocity, w=dtheta/dtau
@@ -40,12 +41,19 @@ class Observer:
         """
         Update coordinate position based on elapsed proper time:
         dX = u dtau = (dX/dtau)dtau.
+
+        Additionally tracks proper time lapses.
         """
         self.position += self.proper_velocity * dtau
+        self.proper_time_lapse += dtau
 
     def apply_coordinate_time(self, dt: float):
         """
         Update coordinate position based on elapsed coordinate time:
-        dX = u dt/gamma = (dX/dtau)(dtau/dt) dt
+        dX = u dt/gamma = (dX/dtau)(dtau/dt) dt.
+
+        Additionally tracks proper time lapses:
+        dtau = dt / gamma = dt / (dt/dtau) = (dtau/dt)dt.
         """
         self.position += self.proper_velocity * dt / self.lorentz_factor()
+        self.proper_time_lapse += dt / self.lorentz_factor()
