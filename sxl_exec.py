@@ -6,7 +6,7 @@ import sympy
 units = sxl.spacetime.UnitSystem.si_ncc()
 coords = sxl.spacetime.CoordinateSystem.trtp()
 metric = sxl.spacetime.MetricTensor.schwarzschild_trtp(units)
-st = sxl.spacetime.Spacetime(metric, units)
+st = sxl.spacetime.Spacetime(metric, units, M=1000)
 
 st.solve()
 

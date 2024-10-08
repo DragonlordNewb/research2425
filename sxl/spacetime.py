@@ -1,7 +1,8 @@
 from sympy import *
 from warnings import *
-from abc import abstractmethod
+from abc import *
 from sxl.util import *
+from sxl.error import *
 
 simplefilter("ignore") # I don't care that SymPy doesn't want None in its matrices.
 
@@ -14,6 +15,7 @@ PB_INDENT = 0
 REAL_c = 299792458
 REAL_G = 6.6743e-11
 REAL_h = 6.62607015e-34
+REAL_Lambda = 1.1056e-52
 
 class UnitSystem:
 
@@ -93,11 +95,22 @@ class CoordinateSystem:
 	proper_time = Symbol("tau")
 	coordinate_velocities: list[Symbol] = None
 	proper_velocities: list[Symbol] = None
+	_n = 0
 
 	def __init__(self, x0, x1, x2, x3) -> None:
 		self.coordinates = symbols(" ".join([x0, x1, x2, x3]))
 		self.coordinate_velocities = [Derivative(self.x(i), self.x(0)) for i in range(4)]
 		self.proper_velocities = [Derivative(self.x(i), self.proper_time) for i in range(4)]
+
+	def __iter__(self):
+		self._n = -1
+		return self
+	
+	def __next__(self):
+		self._n += 1 
+		if self._n == 4:
+			raise StopIteration
+		return self.coordinates[self._n]
 
 	def x(self, i: int) -> Symbol:
 		"""
@@ -1306,7 +1319,7 @@ class Spacetime:
 		parameterization = self._get_parameterization(kwargs)
 
 		# Substitute coordinate values (i.e. x^1 -> 150 km)
-		for i, coordinate in self.coordinates:
+		for i, coordinate in enumerate(self.coordinates):
 			expr = expr.subs(coordinate, point.u(i))
 
 		# Substitute parameterization (i.e. M -> 2e+30)
@@ -1331,4 +1344,13 @@ class Spacetime:
 		to .parameterize() which doesn't necessarily.
 		"""
 		value = self.parameterize(expr, point, **kwargs)
-		return float(value)
+		underdetermined = False
+		try:
+			value = float(value)
+		except TypeError:
+			underdetermined = True
+
+		if underdetermined:
+			s = "Insufficient parameterization to evaluate expression (underdetermined); symbols remaining: " + ", ".join(map(str, list(value.free_symbols)))
+			raise UnderdeterminationError(s)
+		return value

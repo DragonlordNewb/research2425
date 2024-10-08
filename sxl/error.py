@@ -1,0 +1,2 @@
+class UnderdeterminationError(Exception):
+    pass
