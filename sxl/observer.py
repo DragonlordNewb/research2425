@@ -57,3 +57,61 @@ class Observer:
         """
         self.position += self.proper_velocity * dt / self.lorentz_factor()
         self.proper_time_lapse += dt / self.lorentz_factor()
+
+class ObserverEnsemble:
+
+    observers = []
+    _n = 0
+
+    def __init__(self, *args, **kwargs):
+        if len(kwargs.keys()) == len(args) == 0:
+            return
+        raise SyntaxError("ObserverEnsemble must be initialized with \
+                          either .collect() or .make().")
+
+    def __len__(self):
+        return len(self.observers)
+
+    def __iter__(self):
+        self._n = -1
+        return self
+
+    def __next__(self):
+        self._n += 1
+        if self._n >= len(self):
+            raise StopIteration
+        return self.observers[self._n]
+
+    def __getitem__(self, i: int):
+        return self.observers[i]
+    
+    def lorentz_factors(self) -> list[float]:
+        """
+        Return a list of the Lorentz factors of the observers.
+        """
+        result = []
+        for observer in self:
+            result.append(observer.lorentz_factor())
+        return result
+    
+    def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float):
+        """
+        Apply a proper acceleration to all observers.
+        """
+        for observer in self:
+            observer.apply_proper_acceleration(a, dtau)
+    
+    def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float):
+        """
+        Apply a coordinate acceleration to all observers.
+        """
+        for observer in self:
+            observer.apply_coordinate_acceleration(a, dt)
+
+    def apply_proper_time(self, dtau):
+        for observer in self:
+            observer.apply_proper_time(dtau)
+
+    def apply_coordinate_time(self, dt):
+        for observer in self:
+            observer.apply_coordinate_time(dt)
