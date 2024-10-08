@@ -148,3 +148,21 @@ class ObserverEnsemble:
             for observer in ens:
                 result.add_observer(observer)
         return result
+    
+class ObservationEngine:
+
+    observer = None
+    ensemble = None
+
+    st: spacetime.Spacetime = None
+    coordinates: spacetime.CoordinateSystem = None
+    geodesic_acceleration: spacetime.GeodesicAccelerationVectors = None
+    parameterization: dict[str] = None
+
+    def __init__(self, st: spacetime.Spacetime, **parameterization) -> None:
+        self.st = st
+        self.coordinates = self.st.coordinates 
+        self.geodesic_acceleration = self.st.geodesic_acceleration_vectors
+        self.parameterization = parameterization
+
+    def parameterize(self, point: spacetime.GeneralFourVector)
