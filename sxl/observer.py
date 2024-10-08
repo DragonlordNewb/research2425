@@ -142,7 +142,7 @@ class ObserverEnsemble:
         return result
     
     @classmethod
-    def merge(cls, *ensembles: ObserverEnsemble) -> ObserverEnsemble:
+    def merge(cls, *ensembles: "ObserverEnsemble") -> "ObserverEnsemble":
         result = cls()
         for ens in ensembles:
             for observer in ens:

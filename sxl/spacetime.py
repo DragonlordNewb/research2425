@@ -1214,7 +1214,7 @@ class Spacetime:
 			result[k] = p[k]
 		return result
 
-	def parameterize(self, expr, point: spacetime.GeneralFourVector, **kwargs):
+	def parameterize(self, expr, point: GeneralFourVector, **kwargs):
 		"""
 		Give the value of the expression at a particular point 
 		in spacetime given an arbitrary parameterization.
