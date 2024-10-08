@@ -1001,6 +1001,82 @@ class EinsteinTensor:
 		self.compute_dd()
 		self.compute_uu()
 
+class SchoutenTensor:
+
+	"""
+	The SchoutenTensor class.
+
+	Stores information about the Schouten tensor. Requires
+	the RicciTensor to calculate everything. The MetricTensor
+	is had from the RicciTensor object that's passed in.
+	"""
+
+	metric_tensor: MetricTensor = None
+	ricci_tensor: RicciTensor = None
+	schouten_tensor_dd = Matrix([[None for i in range(4)] for j in range(4)])
+	schouten_tensor_uu = Matrix([[None for i in range(4)] for j in range(4)])
+	einstein_tensor_ud = Matrix([[None for i in range(4)] for j in range(4)])
+
+	def __init__(self, ricci: RicciTensor) -> None:
+		self.ricci_tensor = ricci
+		self.metric_tensor = self.ricci_tensor.metric_tensor
+
+		if Configuration.autocompute:
+			self.compute()
+
+	def dd(self, mu, nu):
+		"""
+		The Schouten tensor component P_mn.
+		"""
+		if self.schouten_tensor_dd[mu, nu] is None:
+			self.schouten_tensor_dd[mu, nu] = simplify(Rational("1/2")*(self.ricci_tensor.dd(mu, nu) - self.ricci_tensor.scalar()*self.metric_tensor.dd(mu, nu)/6))
+			self.schouten_tensor_dd[nu, mu] = self.schouten_tensor_dd[mu, nu]
+		return self.schouten_tensor_dd[mu, nu]
+
+	def uu(self, mu, nu):
+		"""
+		The Schouten tensor component P_mn.
+		"""
+		if self.schouten_tensor_uu[mu, nu] is None:
+			self.schouten_tensor_uu[mu, nu] = simplify(Rational("1/2")*(self.ricci_tensor.uu(mu, nu) - self.ricci_tensor.scalar()*self.metric_tensor.uu(mu, nu)/6))
+			self.schouten_tensor_uu[nu, mu] = self.schouten_tensor_uu[mu, nu]
+		return self.schouten_tensor_uu[mu, nu]
+
+	def ud(self, mu: int, nu: int) -> Symbol:
+		"""
+		The Schouten tensor component P^m_n.
+		"""
+		raise RuntimeError("The developer needs to fix the EinsteinTensor.ud method which was never implemented.")
+
+	def compute_dd(self):
+		"""
+		Compute all covariant components.
+		"""
+				
+		with ProgressBar("Computing covariant Schouten tensor components", 16) as pb:
+			for i in range(4):
+				for j in range(4):
+					self.dd(i, j)
+					pb.done()
+
+	def compute_uu(self):
+		"""
+		Compute all contravariant components.
+		"""
+				
+		with ProgressBar("Computing contravariant Schouten tensor components", 16) as pb:
+			for i in range(4):
+				for j in range(4):
+					self.uu(i, j)
+					pb.done()
+
+	def compute(self):
+		"""
+		Compute all components.
+		"""
+		self.compute_dd()
+		self.compute_uu()
+
 class StressEnergyMomentumTensor:
 
 	"""
@@ -1155,6 +1231,7 @@ class Spacetime:
 	riemann_tensor: RiemannTensor = None
 	ricci_tensor: RicciTensor = None
 	weyl_tensor: WeylTensor = None
+	schouten_tensor: SchoutenTensor = None
 	einstein_tensor: EinsteinTensor = None
 	stress_energy_momentum_tensor: StressEnergyMomentumTensor = None
 	geodesic_acceleration_vectors: GeodesicAccelerationVectors = None
@@ -1170,6 +1247,7 @@ class Spacetime:
 		self.riemann_tensor = RiemannTensor(self.christoffel_symbols)
 		self.ricci_tensor = RicciTensor(self.riemann_tensor)
 		self.weyl_tensor = WeylTensor(self.ricci_tensor)
+		self.schouten_tensor = SchoutenTensor(self.ricci_tensor)
 		self.einstein_tensor = EinsteinTensor(self.ricci_tensor)
 		self.stress_energy_momentum_tensor = StressEnergyMomentumTensor(self.einstein_tensor, self.units)
 		self.geodesic_acceleration_vectors = GeodesicAccelerationVectors(self.christoffel_symbols, self.units)
@@ -1192,6 +1270,7 @@ class Spacetime:
 		self.riemann_tensor.compute()
 		self.ricci_tensor.compute()
 		self.weyl_tensor.compute()
+		self.schouten_tensor.compute()
 		self.einstein_tensor.compute()
 		self.stress_energy_momentum_tensor.compute()
 		self.geodesic_acceleration_vectors.compute()
