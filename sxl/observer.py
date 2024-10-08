@@ -156,6 +156,7 @@ class ObservationEngine:
 
     st: spacetime.Spacetime = None
     coordinates: spacetime.CoordinateSystem = None
+    units: spacetime.UnitSystem = None
     geodesic_acceleration: spacetime.GeodesicAccelerationVectors = None
     parameterization: dict[str] = None
 
@@ -164,5 +165,3 @@ class ObservationEngine:
         self.coordinates = self.st.coordinates 
         self.geodesic_acceleration = self.st.geodesic_acceleration_vectors
         self.parameterization = parameterization
-
-    def parameterize(self, point: spacetime.GeneralFourVector)

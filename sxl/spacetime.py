@@ -11,6 +11,10 @@ INDEX_RAISING = "index raising"
 RIEMANN_UDDD_MODE = CHRISTOFFEL_SYMBOLS
 PB_INDENT = 0
 
+REAL_c = 299792458
+REAL_G = 6.6743e-11
+REAL_h = 6.62607015e-34
+
 class UnitSystem:
 
 	"""
@@ -1154,9 +1158,10 @@ class Spacetime:
 	einstein_tensor: EinsteinTensor = None
 	stress_energy_momentum_tensor: StressEnergyMomentumTensor = None
 	geodesic_acceleration_vectors: GeodesicAccelerationVectors = None
+	parameterization: dict[str] = None
 
 	# Run at object creation.
-	def __init__(self, metric: MetricTensor, units: UnitSystem) -> None:
+	def __init__(self, metric: MetricTensor, units: UnitSystem, **parameterization) -> None:
 		self.units = units
 		self.metric_tensor = metric
 		self.coordinates = metric.coordinates
@@ -1168,6 +1173,8 @@ class Spacetime:
 		self.einstein_tensor = EinsteinTensor(self.ricci_tensor)
 		self.stress_energy_momentum_tensor = StressEnergyMomentumTensor(self.einstein_tensor, self.units)
 		self.geodesic_acceleration_vectors = GeodesicAccelerationVectors(self.christoffel_symbols, self.units)
+
+		self.parameterization = parameterization
 
 	def solve(self):
 		"""
@@ -1201,7 +1208,48 @@ class Spacetime:
 		"""
 		self.solve()
 
-	def analyze(self):
+	def _get_parameterization(self, p):
+		result = self.parameterization
+		for k in p.keys():
+			result[k] = p[k]
+		return result
+
+	def parameterize(self, expr, point: spacetime.GeneralFourVector, **kwargs):
+        """
+        Give the value of the expression at a particular point 
+        in spacetime given an arbitrary parameterization.
+
+		Here, "parameterization" is a map from variables or
+		parameters of the spacetime (like M, a, Q, v_s) to their
+		chosen numerical values.
+        """
+
+		parameterization = self._get_parameterization(kwargs)
+
+        # Substitute coordinate values (i.e. x^1 -> 150 km)
+        for i, coordinate in self.coordinates:
+            expr = expr.subs(coordinate, point.u(i))
+
+        # Substitute parameterization (i.e. M -> 2e+30)
+        for key in parameterization.keys():
+            expr = expr.subs(Symbol(key), parameterization[key])
+        
+        # Substitute constants, or at least those not 
+		# normalized by the unit system
+        expr = expr.subs(Symbol("c"), REAL_c)
+        expr = expr.subs(Symbol("G"), REAL_G)
+        expr = expr.subs(Symbol("h"), REAL_h)
+        expr = expr.subs(Symbol("Lambda"), REAL_Lambda)
+
+		# Simplify
+        expr = simplify(expr)
+
+        return expr
+
+	def evaluate(self, expr, point, **kwargs):
 		"""
-		Open a GUI analysis system.
+		Return a NUMERICAL VALUE SPECIFICALLY, as opposed
+		to .parameterize() which doesn't necessarily.
 		"""
+		value = self.parameterize(expr, point, **kwargs)
+		return float(value)
