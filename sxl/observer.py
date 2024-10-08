@@ -23,21 +23,21 @@ class Observer:
     def lorentz_factor(self):
         return self.proper_velocity.u(0)
 
-    def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float):
+    def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float=DEFAULT_DT):
         """
         Update proper velocity based on proper acceleration:
         du = d(dX/dtau) = alpha dtau = (d^2X/dtau^2)dtau.
         """
         self.proper_velocity += a * dtau
 
-    def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float):
+    def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float=DEFAULT_DT):
         """
         Update proper velocity based on coordinate acceleration:
         du = d(dX/dtau) = a gamma^3 dtau = (d^2X/dt^2)(dt/dtau)^3 dtau.
         """
         self.proper_velocity += a * self.lorentz_factor()**3 * dt
 
-    def apply_proper_time(self, dtau: float):
+    def apply_proper_time(self, dtau: float=DEFAULT_DT):
         """
         Update coordinate position based on elapsed proper time:
         dX = u dtau = (dX/dtau)dtau.
@@ -47,7 +47,7 @@ class Observer:
         self.position += self.proper_velocity * dtau
         self.proper_time_lapse += dtau
 
-    def apply_coordinate_time(self, dt: float):
+    def apply_coordinate_time(self, dt: float=DEFAULT_DT):
         """
         Update coordinate position based on elapsed coordinate time:
         dX = u dt/gamma = (dX/dtau)(dtau/dt) dt.
@@ -67,7 +67,7 @@ class ObserverEnsemble:
         if len(kwargs.keys()) == len(args) == 0:
             return
         raise SyntaxError("ObserverEnsemble must be initialized with \
-                          either .collect() or .make().")
+                          either .collect(), .make(), or .merge().")
 
     def __len__(self):
         return len(self.observers)
@@ -84,6 +84,13 @@ class ObserverEnsemble:
 
     def __getitem__(self, i: int):
         return self.observers[i]
+
+    def add_observer(self, observer: Observer) -> int:
+        self.observers.append(observer)
+        return len(self) - 1
+
+    def remove_observer(self, index: int):
+        self.observers.remove(index)
     
     def lorentz_factors(self) -> list[float]:
         """
@@ -94,24 +101,50 @@ class ObserverEnsemble:
             result.append(observer.lorentz_factor())
         return result
     
-    def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float):
+    def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float=DEFAULT_DT):
         """
         Apply a proper acceleration to all observers.
         """
         for observer in self:
             observer.apply_proper_acceleration(a, dtau)
     
-    def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float):
+    def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float=DEFAULT_DT):
         """
         Apply a coordinate acceleration to all observers.
         """
         for observer in self:
             observer.apply_coordinate_acceleration(a, dt)
 
-    def apply_proper_time(self, dtau):
+    def apply_proper_time(self, dtau=DEFAULT_DT):
         for observer in self:
             observer.apply_proper_time(dtau)
 
-    def apply_coordinate_time(self, dt):
+    def apply_coordinate_time(self, dt=DEFAULT_DT):
         for observer in self:
             observer.apply_coordinate_time(dt)
+
+    # Maker classes
+
+    @classmethod
+    def collect(cls, *observers):
+        result = cls()
+        cls.observers = observers
+    
+    @classmethod
+    def make(cls, xis, vis, tis, wis):
+        l = len(xis)
+        if l != len(vis) or l != len(tis) or l != len(wis):
+            raise SyntaxError("Invalid inputs to .make(). Must be lists of GFVs of the same length.")
+        
+        result = cls()
+        for i in range(l):
+            result.add_observer(Observer(xis[i], vis[i], tis[i], wis[i]))
+        return result
+    
+    @classmethod
+    def merge(cls, *ensembles: ObserverEnsemble) -> ObserverEnsemble:
+        result = cls()
+        for ens in ensembles:
+            for observer in ens:
+                result.add_observer(observer)
+        return result
