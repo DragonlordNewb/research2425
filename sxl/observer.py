@@ -1,6 +1,7 @@
 from sxl import spacetime
+from math import sqrt
 
-DEFAULT_DT = 0.001
+DT = 0.001
 
 class Observer:
 
@@ -20,24 +21,72 @@ class Observer:
 		self.angle = ti if ti is not None else self.zero
 		self.proper_rotation = wi if wi is not None else self.zero
 
+	def compute_lorentz_factor(self):
+		"""
+		c^2 dtau^2 = g_ij dx^i dx^j = g_ij v^i v^j dt^2
+		[v^i = dx^i/dt  and  v^0 = dt/dt = 1]
+
+	 -> dt/dtau = sqrt(c^2 / g_ij v^i v^j) = sqrt(1 / 1 - g_ab v^a v^b)
+		since g_tt v^t v^t = c^2 * 1 * 1 = c^2.
+
+		Finding the coordinate velocity from the proper velocity
+		is the hard part here. We do have the relation
+
+		gamma = cosh(arcsinh(w/c))
+
+		to help us out here, though. TO DO: check that this holds
+		in curved spacetime as well as in flat spacetime! I would
+		think that it does by dint of the nature of gamma and all
+		of hyperbolic geometry, 
+		"""
+
+		wi = [
+			self.proper_velocity[1], 
+			self.proper_velocity[2],
+			self.proper_velocity[3]
+		]
+		w = sqrt(sum((wi[i] for i in range(3))))
+		self.proper_velocity[0] = 
+
+
 	def lorentz_factor(self):
 		return self.proper_velocity.u(0)
+	
+	"""
+	This is probably an abuse of the word "speed" but it's
+	more compact than "spatial_velocity". I hope you get my
+	meaning here.
+	"""
 
-	def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float=DEFAULT_DT):
+	def proper_speed(self):
+		return sqrt(
+			self.proper_velocity[1]**2 \
+			+ self.proper_velocity[2]**2 \
+			+ self.proper_velocity[3]**2
+		)
+	
+	def coordinate_speed(self):
+		return sqrt(
+			self.coordinate_velocity[1]**2 \
+			+ self.coordinate_velocity[2]**2 \
+			+ self.coordinate_velocity[3]**2
+		)
+
+	def apply_proper_acceleration(self, a: spacetime.GeneralFourVector, dtau: float=DT):
 		"""
 		Update proper velocity based on proper acceleration:
 		du = d(dX/dtau) = alpha dtau = (d^2X/dtau^2)dtau.
 		"""
 		self.proper_velocity += a * dtau
 
-	def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float=DEFAULT_DT):
+	def apply_coordinate_acceleration(self, a: spacetime.GeneralFourVector, dt: float=DT):
 		"""
 		Update proper velocity based on coordinate acceleration:
 		du = d(dX/dtau) = a gamma^3 dtau = (d^2X/dt^2)(dt/dtau)^3 dtau.
 		"""
 		self.proper_velocity += a * self.lorentz_factor()**3 * dt
 
-	def apply_proper_time(self, dtau: float=DEFAULT_DT):
+	def apply_proper_time(self, dtau: float=DT):
 		"""
 		Update coordinate position based on elapsed proper time:
 		dX = u dtau = (dX/dtau)dtau.
@@ -47,7 +96,7 @@ class Observer:
 		self.position += self.proper_velocity * dtau
 		self.proper_time_lapse += dtau
 
-	def apply_coordinate_time(self, dt: float=DEFAULT_DT):
+	def apply_coordinate_time(self, dt: float=DT):
 		"""
 		Update coordinate position based on elapsed coordinate time:
 		dX = u dt/gamma = (dX/dtau)(dtau/dt) dt.
@@ -157,14 +206,19 @@ class ObservationEngine:
 	st: spacetime.Spacetime = None
 	coordinates: spacetime.CoordinateSystem = None
 	units: spacetime.UnitSystem = None
-	geodesic_acceleration: spacetime.GeodesicAccelerationVectors = None
 
 	def __init__(self, st: spacetime.Spacetime) -> None:
 		self.st = st
 		self.coordinates = self.st.coordinates 
-		self.proper_acceleration_vector
+		self.proper_acceleration_vector = st.geodesic_acceleration_vectors.proper_vector()
+		self.coordinate_acceleration_vector = st.geodesic_acceleration_vectors.coordinate_vector()
 
 	def proper_acceleration_vector_at(self, point: spacetime.GeneralFourVector):
 		return self.st.evaluate(
-			self.st.geodesic_acceleration_vectors.proper(i)
+			self.proper_acceleration_vector, point
+		)
+
+	def coordinate_acceleration_vector_at(self, point: spacetime.GeneralFourVector):
+		return self.st.evaluate(
+			self.coordinate_acceleration_vector, point
 		)

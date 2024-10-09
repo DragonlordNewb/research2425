@@ -561,11 +561,39 @@ class GeneralFourVector:
 		The metric used is that of the LEFT operand.
 		I'm not quite sure how to check if two metrics
 		are equal yet, so...
+
+		Returns the square so I don't have to deal 
+		with imaginary values.
 		"""
+		self.compute()
+		other.compute()
+		dx = GeneralFourVector(
+			self.metric_tensor, "u",
+			other.u(0) - self.u(0),
+			other.u(1) - self.u(1),
+			other.u(2) - self.u(2),
+			other.u(3) - self.u(3)
+		)
 		ds2 = 0
 		for i in range(4):
 			for j in range(4):
-				ds2 = ds2 + self.metric.dd(i, j) * self.u(i) * other.u(j)
+				ds2 = ds2 + (self.metric_tensor.dd(i, j) * dx.u(i) * dx.u(j))
+		return ds2
+
+	def norm(self):
+		"""
+		Return the norm of the vector according to 
+		the metric.
+
+		Returns the square so I don't have to deal
+		with imaginary values.
+		"""
+
+		self.compute()
+		ds2 = 0
+		for i in range(4):
+			for j in range(4):
+				ds2 = ds2 + self.metric_tensor.dd(i, j) * self.u(i) * self.u(j)
 		return ds2
 
 # ===== EINSTEIN FIELD EQUATION COMPONENTS ===== #
