@@ -92,15 +92,18 @@ class CoordinateSystem:
 	dimensionality: int = 4
 	dimensions: list[int] = [0, 1, 2, 3]
 	coordinates: list[Symbol]
+	differential_elements: list[Symbol]
 	proper_time = Symbol("tau")
 	coordinate_velocities: list[Symbol] = None
 	proper_velocities: list[Symbol] = None
 	_n = 0
 
 	def __init__(self, x0, x1, x2, x3) -> None:
-		self.coordinates = symbols(" ".join([x0, x1, x2, x3]))
-		self.coordinate_velocities = [Derivative(self.x(i), self.x(0)) for i in range(4)]
-		self.proper_velocities = [Derivative(self.x(i), self.proper_time) for i in range(4)]
+		self.coordinates = list(symbols(" ".join([x0, x1, x2, x3])))
+		self.differential_elements = list(symbols(" ".join(["d" + i for i in [x0, x1, x2, x3]])))
+		self.coordinate_velocities = list(symbols(" ".join(["v_" + i for i in [x0, x1, x2, x3]])))
+		self.coordinate_velocities[0] = 1
+		self.proper_velocities = list(symbols(" ".join(["w_" + i for i in [x0, x1, x2, x3]])))
 
 	def __iter__(self):
 		self._n = -1
@@ -114,9 +117,15 @@ class CoordinateSystem:
 
 	def x(self, i: int) -> Symbol:
 		"""
-		Get the ith position coordinate (dx^i).
+		Get the ith position coordinate (x^i).
 		"""
 		return self.coordinates[i]
+	
+	def dx(self, i: int) -> Symbol:
+		"""
+		Get the ith position differential element (dx^i).
+		"""
+		return self.differential_elements[i]
 
 	def v(self, i: int) -> Symbol:
 		"""
@@ -129,6 +138,14 @@ class CoordinateSystem:
 		Get the ith proper velocity component (dx^i/dtau).
 		"""
 		return self.proper_velocities[i]
+	
+	# Substitutions
+
+	def coordinate_velocity_substitution(self, expr: Symbol, use0: bool=True, use1: bool=True, use2: bool=True, use3: bool=True):
+		use = [use0, use1, use2, use3]
+		for i, u in enumerate(use):
+			if u:
+				expr = expr.subs()
 
 	# Implementations
 
