@@ -505,17 +505,13 @@ class GeneralFourVector:
 		self.compute_u()
 		self.compute_d()
 
-	def raise_index(self, i):
-		"""
-		Use index raising to find contravariant components.
-		"""
-		return
-
-	def lower_index(self, i):
-		"""
-		Use index lowering to find covariant components.
-		"""
-		return
+	def subs(self, a, b):
+		self.compute()
+		result = GeneralFourVector(self.metric_tensor, "u", 0, 0, 0, 0)
+		for i in range(4):
+			result.vector_d[i] = self.d(i).subs(a, b)
+			result.vector_u[i] = self.u(i).subs(a, b)
+		return result
 
 	@classmethod 
 	def zero(cls, metric: MetricTensor) -> "GeneralFourVector":
@@ -1175,14 +1171,18 @@ class GeodesicAccelerationVectors:
 
 	units: UnitSystem = None
 	coordinates: CoordinateSystem = None
+	metric_tensor: MetricTensor = None
 	christoffel_symbols: ChristoffelSymbols = None
 	proper_geodesic_acceleration_vector = [None, None, None, None]
+	proper_geodesic_acceleration_vector_gfv = None
 	coordinate_geodesic_acceleration_vector = [None, None, None, None]
+	coordinate_geodesic_acceleration_vector_gfv = None
 
-	def __init__(self, christoffel: ChristoffelSymbols, units: UnitSystem) -> None:
+	def __init__(self, christoffel: ChristoffelSymbols, units: UnitSystem=None) -> None:
 		self.christoffel_symbols = christoffel
 		self.coordinates = christoffel.coordinates
 		self.units = units
+		self.metric = christoffel.metric_tensor
 
 		if Configuration.autocompute:
 			self.compute()
@@ -1197,8 +1197,19 @@ class GeodesicAccelerationVectors:
 			for mu in range(4):
 				for nu in range(4):
 					accel = accel - self.christoffel_symbols.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
-			self.proper_geodesic_acceleration_vector[i] = accel / self.units.c**2
+			self.proper_geodesic_acceleration_vector[i] = accel
 		return self.proper_geodesic_acceleration_vector[i]
+
+	def proper_vector(self) -> GeneralFourVector:
+		"""
+		The full proper acceleration vector.
+		"""
+		if self.proper_geodesic_acceleration_vector_gfv is None:
+			self.proper_geodesic_acceleration_vector_gfv = GeneralFourVector(
+				self.metric_tensor, "u", 
+				self.proper(0), self.proper(1), self.proper(2), self.proper(3)
+			)
+		return self.proper_geodesic_acceleration_vector_gfv
 
 	def coordinate(self, i: int) -> Symbol:
 		"""
@@ -1214,6 +1225,18 @@ class GeodesicAccelerationVectors:
 					accel = accel - self.christoffel_symbols.udd(0, mu, nu)*self.coordinates.v(i)*self.coordinates.v(mu)*self.coordinates.v(nu) - self.christoffel_symbols.udd(i, mu, nu)*self.coordinates.w(mu)*self.coordinates.w(nu)
 			self.coordinate_geodesic_acceleration_vector[i] = accel
 		return self.coordinate_geodesic_acceleration_vector[i]
+
+	def coordinate_vector(self) -> GeneralFourVector:
+		"""
+		The full coordinate acceleration vector.
+		"""
+		if self.coordinate_geodesic_acceleration_vector_gfv is None:
+			self.coordinate_geodesic_acceleration_vector_gfv = GeneralFourVector(
+				self.metric_tensor, "u", 
+				self.coordinate(0), self.coordinate(1), 
+				self.coordinate(2), self.coordinate(3)
+			)
+		return self.coordinate_geodesic_acceleration_vector_gfv
 	
 	def compute_proper(self):
 		for i in range(4):

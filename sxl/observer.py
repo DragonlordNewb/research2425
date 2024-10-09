@@ -162,4 +162,9 @@ class ObservationEngine:
 	def __init__(self, st: spacetime.Spacetime) -> None:
 		self.st = st
 		self.coordinates = self.st.coordinates 
-		self.geodesic_acceleration = self.st.geodesic_acceleration_vectors
+		self.proper_acceleration_vector
+
+	def proper_acceleration_vector_at(self, point: spacetime.GeneralFourVector):
+		return self.st.evaluate(
+			self.st.geodesic_acceleration_vectors.proper(i)
+		)
