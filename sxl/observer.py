@@ -1,7 +1,12 @@
 from sxl import spacetime
+from sympy import Symbol
 from math import sqrt
 
 DT = 0.001
+
+TIMELIKE = "TIMELIKE"
+LIGHTLIKE = "LIGHTLIKE"
+SPACELIKE = "SPACELIKE"
 
 class Observer:
 
@@ -198,6 +203,36 @@ class ObserverEnsemble:
 			for observer in ens:
 				result.add_observer(observer)
 		return result
+	
+class Geodesic:
+
+	x: spacetime.GeneralFourVector
+	v: spacetime.GeneralFourVector
+	ds2: Symbol
+	geodesic_t = None
+	metric_tensor: spacetime.MetricTensor = None
+	units: spacetime.UnitSystem = None
+
+	def __init__(self, xi, vi, ds2, metric: spacetime.MetricTensor) -> None:
+		self.x = xi
+		self.v = vi
+		self.ds2 = ds2
+		if self.ds2 < 0:
+			self.geodesic_t = SPACELIKE
+		if self.ds2 == 0:
+			self.geodesic_t = LIGHTLIKE
+		if self.ds > 0:
+			self.geodesic_t = TIMELIKE
+		self.metric_tensor = metric
+		self.units = self.metric_tensor.units
+
+	def geodesic_type(self):
+		return self.geodesic_t
+
+class NullGeodesic(Geodesic):
+
+	def __init__(self, xi, vi):
+		Geodesic.__init__(self, xi, vi, 0)
 	
 class ObservationEngine:
 

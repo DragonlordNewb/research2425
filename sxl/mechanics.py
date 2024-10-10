@@ -1,6 +1,8 @@
 from sxl import spacetime
 from sxl import observer
 from sympy import Matrix
+from sympy import cos
+from sympy import sin
 from typing import Union
 
 CLIPPED = "CLIPPED" # "the point is inside the object"
@@ -26,25 +28,25 @@ class Shape:
     # Collision checking
 
     def transform_to_local(self, point: spacetime.GeneralFourVector) -> spacetime.GeneralFourVector:
-        if _last_angle is None or _last_angle != self.comoving_observer.angle:
+        if self._last_angle is None or self._last_angle != self.comoving_observer.angle:
             rot = self.comoving_observer.angle
             theta_x, theta_y, theta_z = rot.u(1), rot.u(2), rot.u(3)
 
             R_x = Matrix([
                 [1, 0, 0],
-                [0, sp.cos(theta_x), -sp.sin(theta_x)],
-                [0, sp.sin(theta_x), sp.cos(theta_x)]
+                [0, cos(theta_x), -sin(theta_x)],
+                [0, sin(theta_x), cos(theta_x)]
             ])
 
             R_y = Matrix([
-                [sp.cos(theta_y), 0, sp.sin(theta_y)],
+                [cos(theta_y), 0, sin(theta_y)],
                 [0, 1, 0],
-                [-sp.sin(theta_y), 0, sp.cos(theta_y)]
+                [-sin(theta_y), 0, cos(theta_y)]
             ])
 
             R_z = Matrix([
-                [sp.cos(theta_z), -sp.sin(theta_z), 0],
-                [sp.sin(theta_z), sp.cos(theta_z), 0],
+                [cos(theta_z), -sin(theta_z), 0],
+                [sin(theta_z), cos(theta_z), 0],
                 [0, 0, 1]
             ])
 
