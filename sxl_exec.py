@@ -14,4 +14,4 @@ print()
 
 print("Christoffel symbols of the second kind:")
 
-sympy.pprint(st.christoffel_symbols.christoffel_symbols_udd)
+sympy.pprint(st.riemann_tensor.riemann_tensor_uddd)
