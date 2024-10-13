@@ -17,6 +17,10 @@ REAL_G = 6.6743e-11
 REAL_h = 6.62607015e-34
 REAL_Lambda = 1.1056e-52
 
+NO_SYMMETRY = None
+SYMMETRIC = "symmetric"
+ANTISYMMETRIC = "antisymmetric"
+
 class UnitSystem:
 
 	"""
@@ -368,9 +372,9 @@ class GeneralTensor:
 	tensor_dd = [[None for i in range(4)] for j in range(4)]
 	requisites = None
 	metric_tensor = None
-	symmetric = None
+	symmetry = None
 
-	def __init__(self, metric: MetricTensor, indexing: str=None, symmetric: bool, *T, **requisites):
+	def __init__(self, metric: MetricTensor, indexing: str=None, symmetry=None, *T, **requisites):
 		self.metric_tensor = metric
 		self.requisites = requisites
 		if len(T) == 0:
@@ -382,7 +386,7 @@ class GeneralTensor:
 		elif indexing == "dd":
 			self.tensor_dd = T
 
-		self.symmetric = symmetric
+		self.symmetry = symmetry
 
 		if Configuration.autocompute:
 			self.compute()
@@ -401,16 +405,20 @@ class GeneralTensor:
 		if self.tensor_uu[i][j] is None:
 			computation = self.find_uu(i, j)
 			self.tensor_uu[i][j] = computation
-			if self.symmetric:
+			if self.symmetry == SYMMETRIC:
 				self.tensor_uu[j][i] = computation
+			if self.symmetry == ANTISYMMETRIC:
+				self.tensor_uu[j][i] = -1 * computation
 		return self.tensor_uu[i][j]
 
 	def dd(self, i, j):
 		if self.tensor_dd[i][j] is None:
 			computation = self.find_dd(i, j)
 			self.tensor_dd[i][j] = computation
-			if self.symmetric:
+			if self.symmetry == SYMMETRIC:
 				self.tensor_dd[j][i] = computation
+			if self.symmetry == ANTISYMMETRIC:
+				self.tensor_dd[j][i] = -1 * computation
 		return self.tensor_dd[i][j]
 
 	def compute_uu(self):
