@@ -26,18 +26,24 @@ class Configuration:
 
 	verbose: bool = True
 	autocompute: bool = False
+	autoindex: bool = True
 
 	@staticmethod
 	def set_verbose(value: bool) -> None:
 		if type(value) != bool:
-			raise TypeError("Must set sxl.spacetime.Configuration.verbose to a bool value")
+			raise TypeError("Must set sxl.util.Configuration.verbose to a bool value")
 		Configuration.verbose = value
 
 	@staticmethod
 	def set_autocompute(value: bool):
 		if type(value) != bool:
-			raise TypeError("Must set sxl.spacetime.Configuration.autocompute to a bool value")
+			raise TypeError("Must set sxl.util.Configuration.autocompute to a bool value")
 		Configuration.autocompute = value
+
+	@staticmethod
+	def set_autoindex(value: bool):
+		if type(value) != bool:
+			raise TypeError("Must set sxl.util.Configuration.autoindex to a bool value")
 
 def az(x):
 	if x < 10:

@@ -367,10 +367,11 @@ class GeneralTensor:
 	tensor_uu = [[None for i in range(4)] for j in range(4)]
 	tensor_dd = [[None for i in range(4)] for j in range(4)]
 	requisites = None
-	metric = None
+	metric_tensor = None
+	symmetric = None
 
-	def __init__(self, metric: MetricTensor, indexing: str=None, *T, **requisites):
-		self.metric = metric
+	def __init__(self, metric: MetricTensor, indexing: str=None, symmetric: bool, *T, **requisites):
+		self.metric_tensor = metric
 		self.requisites = requisites
 		if len(T) == 0:
 			return
@@ -381,27 +382,35 @@ class GeneralTensor:
 		elif indexing == "dd":
 			self.tensor_dd = T
 
+		self.symmetric = symmetric
+
 		if Configuration.autocompute:
 			self.compute()
 
 	def find_uu(i, j):
-		return NotImplemented("GeneralTensor's contravariant finder not implemented.")
+		if Configuration.autoindex:
+			return self.raise_indices(i, j)
+		return NotImplemented("GeneralTensor's contravariant finder not implemented. Try Configuration.set_autoindex(True) to use index raising.")
 
 	def find_dd(i, j):
-		return NotImplemented("GeneralTensor covariant finder not implemented.")
+		if Configuration.autoindex:
+			return self.lower_indices(i, j)
+		return NotImplemented("GeneralTensor's covariant finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
 
 	def uu(self, i, j):
 		if self.tensor_uu[i][j] is None:
 			computation = self.find_uu(i, j)
 			self.tensor_uu[i][j] = computation
-			self.tensor_uu[j][i] = computation
+			if self.symmetric:
+				self.tensor_uu[j][i] = computation
 		return self.tensor_uu[i][j]
 
 	def dd(self, i, j):
 		if self.tensor_dd[i][j] is None:
 			computation = self.find_dd(i, j)
 			self.tensor_dd[i][j] = computation
-			self.tensor_dd[j][i] = computation
+			if self.symmetric:
+				self.tensor_dd[j][i] = computation
 		return self.tensor_dd[i][j]
 
 	def compute_uu(self):
@@ -422,13 +431,27 @@ class GeneralTensor:
 		"""
 		Use index raising to find contravariant components (requires metric).
 		"""
-		return
+		if self.uu(i, j) is None:
+			raise RuntimeError("Cannot raise indices on tensor as the lower-index component is None.")
+
+		Tuu = 0
+		for k in range(4):
+			for l in range(4):
+				Tuu = Tuu + (self.metric_tensor.uu(i, k) * self.metric_tensor.uu(j, l) * self.dd(k, l)) 
+		return Tuu
 
 	def lower_indices(self, i, j):
 		"""
 		Use index lowering to find covariant components (requires metric).
 		"""
-		return
+		if self.uu(i, j) is None:
+			raise RuntimeError("Cannot raise indices on tensor as the lower-index component is None.")
+
+		Tdd = 0
+		for k in range(4):
+			for l in range(4):
+				Tdd = Tdd + (self.metric_tensor.dd(i, k) * self.metric_tensor.dd(j, l) * self.uu(k, l)) 
+		return Tdd
 	
 	# Math operators
 
@@ -444,11 +467,8 @@ class GeneralTensor:
 		return T
 	
 	def __sub__(self, other: "GeneralTensor") -> "GeneralTensor":
-		try:
-			self.compute()
-			other.compute()
-		except NotImplemented:
-			pass
+		self.compute()
+		other.compute()
 
 		T = GeneralTensor(self.metric, "dd")
 		T.requisites.update(other.requisites)
