@@ -359,10 +359,10 @@ class MetricTensor:
 		r = coords.x(1)
 		return cls(coords, [[units.c**2, phi/2, 0, 0], [phi/2, -1, 0, 0], [0, 0, -r**2, 0], [0, 0, 0, -1]], "dd")
 
-class GeneralTensor:
+class GeneralRankTwoTensor:
 
 	"""
-	The Rank2Tensor class. Describes a Rank-2 tensor.
+	The GeneralRankTwoTensor class. Describes a Rank-2 tensor.
 
 	Comes with methods for element calculation and
 	access, as well as other doodads.
@@ -380,7 +380,7 @@ class GeneralTensor:
 		if len(T) == 0:
 			return
 		elif len(T) != 4:
-			raise IndexError("GeneralTensor must be a 4D 2-form (i.e. 4x4).")
+			raise IndexError("GeneralRankTwoTensor must be a 4D 2-form (i.e. 4x4).")
 		if indexing == "uu":
 			self.tensor_uu = T
 		elif indexing == "dd":
@@ -394,12 +394,12 @@ class GeneralTensor:
 	def find_uu(i, j):
 		if Configuration.autoindex:
 			return self.raise_indices(i, j)
-		return NotImplemented("GeneralTensor's contravariant finder not implemented. Try Configuration.set_autoindex(True) to use index raising.")
+		return NotImplemented("GeneralRankTwoTensor's contravariant finder not implemented. Try Configuration.set_autoindex(True) to use index raising.")
 
 	def find_dd(i, j):
 		if Configuration.autoindex:
 			return self.lower_indices(i, j)
-		return NotImplemented("GeneralTensor's covariant finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
+		return NotImplemented("GeneralRankTwoTensor's covariant finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
 
 	def uu(self, i, j):
 		if self.tensor_uu[i][j] is None:
@@ -439,7 +439,7 @@ class GeneralTensor:
 		"""
 		Use index raising to find contravariant components (requires metric).
 		"""
-		if self.uu(i, j) is None:
+		if self.dd(i, j) is None:
 			raise RuntimeError("Cannot raise indices on tensor as the lower-index component is None.")
 
 		Tuu = 0
@@ -463,10 +463,10 @@ class GeneralTensor:
 	
 	# Math operators
 
-	def __add__(self, other: "GeneralTensor") -> "GeneralTensor":
+	def __add__(self, other: "GeneralRankTwoTensor") -> "GeneralRankTwoTensor":
 		self.compute()
 		other.compute()
-		T = GeneralTensor(self.metric, "dd")
+		T = GeneralRankTwoTensor(self.metric, "dd")
 		T.requisites.update(other.requisites)
 		for i in range(4):
 			for j in range(4):
@@ -474,16 +474,142 @@ class GeneralTensor:
 				T.tensor_dd[i][j] = self.dd(i, j) + other.dd(i, j)
 		return T
 	
-	def __sub__(self, other: "GeneralTensor") -> "GeneralTensor":
+	def __sub__(self, other: "GeneralRankTwoTensor") -> "GeneralRankTwoTensor":
 		self.compute()
 		other.compute()
 
-		T = GeneralTensor(self.metric, "dd")
+		T = GeneralRankTwoTensor(self.metric, "dd")
 		T.requisites.update(other.requisites)
 		for i in range(4):
 			for j in range(4):
 				T.tensor_uu[i][j] = self.uu(i, j) - other.uu(i, j)
 				T.tensor_dd[i][j] = self.dd(i, j) - other.dd(i, j)
+		return T
+
+class GeneralRankThreeTensor:
+
+	"""
+	The GeneralRankThreeTensor class. Describes a Rank-3 tensor.
+
+	Comes with methods for element calculation and
+	access, as well as other doodads.
+	"""
+
+	tensor_uuu = [[None for i in range(4)] for j in range(4)]
+	tensor_ddd = [[None for i in range(4)] for j in range(4)]
+	requisites = None
+	metric_tensor = None
+	symmetry = None
+
+	def __init__(self, metric: MetricTensor, indexing: str=None, *T, **requisites):
+		self.metric_tensor = metric
+		self.requisites = requisites
+		if len(T) == 0:
+			return
+		elif len(T) != 4:
+			raise IndexError("GeneralRankThreeTensor must be a 4D 3-form (i.e. 4x4).")
+		if indexing == "uuu":
+			self.tensor_uuu = T
+		elif indexing == "ddd":
+			self.tensor_ddd = T
+		else:
+			raise IndexError("")
+
+		self.symmetry = symmetry
+
+		if Configuration.autocompute:
+			self.compute()
+
+	def find_uuu(i, j, k):
+		if Configuration.autoindex:
+			return self.raise_indices(i, j, k)
+		return NotImplemented("GeneralTensor's contravariant finder not implemented. Try Configuration.set_autoindex(True) to use index raising.")
+
+	def find_ddd(i, j, k):
+		if Configuration.autoindex:
+			return self.lower_indices(i, j, k)
+		return NotImplemented("GeneralTensor's covariant finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
+
+	def uuu(self, i, j, k):
+		if self.tensor_uuu[i][j][k] is None:
+			computation = self.find_uu(i, j)
+			self.tensor_uuu[i][j][k] = simplify(computation)
+		return self.tensor_uuu[i][j][k]
+
+	def dd(self, i, j):
+		if self.tensor_dd[i][j][k] is None:
+			computation = self.find_dd(i, j)
+			self.tensor_dd[i][j][k] = simplify(computation)
+		return self.tensor_dd[i][j][k]
+
+	def compute_uuu(self):
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					self.uuu(i, j, k)
+
+	def compute_ddd(self):
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					self.ddd(i, j, k)
+
+	def compute(self):
+		self.compute_uu()
+		self.compute_dd()
+
+	def raise_indices(self, i, j, k):
+		"""
+		Use index raising to find contravariant components (requires metric).
+		"""
+		if self.ddd(i, j, k) is None:
+			raise RuntimeError("Cannot raise indices on tensor as the lower-index component is None.")
+
+		Tuuu = 0
+		for l in range(4):
+			for m in range(4):
+				for n in range(4):
+					Tuu = Tuu + (self.metric_tensor.uu(i, l) * self.metric_tensor.uu(j, m) * self.metric_tensor.uu(k, n) * self.dd(l, m, n)) 
+		return Tuuu
+
+	def lower_indices(self, i, j):
+		"""
+		Use index lowering to find covariant components (requires metric).
+		"""
+		if self.uuu(i, j, k) is None:
+			raise RuntimeError("Cannot lower indices on tensor as the upper-index component is None.")
+
+		Tddd = 0
+		for l in range(4):
+			for m in range(4):
+				for n in range(4):
+					Tddd = Tddd + (self.metric_tensor.dd(i, l) * self.metric_tensor.dd(j, m) * self.metric_tensor.dd(k, n) * self.uu(l, m, n)) 
+		return Tddd
+	
+	# Math operators
+
+	def __add__(self, other: "GeneralTensor") -> "GeneralTensor":
+		self.compute()
+		other.compute()
+		T = GeneralTensor(self.metric, "ddd")
+		T.requisites.update(other.requisites)
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					T.tensor_uuu[i][j][k] = self.uuu(i, j, k) + other.uuu(i, j, k)
+					T.tensor_ddd[i][j][k] = self.ddd(i, j, k) + other.ddd(i, j, k)
+		return T
+	
+	def __sub__(self, other: "GeneralTensor") -> "GeneralTensor":
+		self.compute()
+		other.compute()
+		T = GeneralTensor(self.metric, "ddd")
+		T.requisites.update(other.requisites)
+		for i in range(4):
+			for j in range(4):
+				for k in range(4):
+					T.tensor_uuu[i][j][k] = self.uuu(i, j, k) - other.uuu(i, j, k)
+					T.tensor_ddd[i][j][k] = self.ddd(i, j, k) - other.ddd(i, j, k)
 		return T
 
 class GeneralFourVector:
