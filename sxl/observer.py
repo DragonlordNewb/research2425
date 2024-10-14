@@ -263,18 +263,27 @@ class Field(ABC):
 	precise fields that can actually be
 	used.
 
-	The Field.compute_force() method is
+	The Field.specific_proper_force() method is
 	intended to be called once in-place to
-	fill the Field.force 4-vector with the 
+	fill the Field.specific_force 4-vector with the 
 	correct values.
 	"""
 
-	force: spacetime.GeneralFourVector = None
 	coupling_constant: Symbol = None
 	
 	@abstractmethod
-	def compute_force(self, observer: Observer) -> None:
-		raise NotImplemented("Field.compute_force() is not implemented. Use a fully-defined Field subclass.")
+	def specific_proper_force(self, observer: Observer) -> None:
+		raise NotImplemented("Field.specific_proper_force() is not implemented. Use a fully-defined Field subclass.")
+	
+class ForceField(Field):
+
+	def __init__(self, f: spacetime.GeneralFourVector):
+		self.specific_force = f
+
+	def specific_proper_force(self, observer: Observer) -> None:
+		return self.specific_force
+
+# === Bosonic Fields === #
 
 class SpinningBosonField(Field):
 
@@ -314,13 +323,9 @@ class SpinningBosonField(Field):
 	"""
 
 	# coupling_constant
-	# def compute_force(self, observer: Observer) -> None
+	# def specific_proper_force(self, observer: Observer) -> None
 
 	effective_tensor: spacetime.GeneralTensor = None
-
-	@abstractmethod
-	def compute_effective_tensor(self) -> None:
-		raise NotImplemented("SpinningBosonField.compute_effective_tensor() is not implemented. Use a fully-defined SpinningBosonField subclass.")
 
 class VectorField(SpinningBosonField):
 
@@ -335,19 +340,25 @@ class VectorField(SpinningBosonField):
 
 	# coupling_constant
 	# effective_tensor
-	# def compute_effective_tensor(self) -> None
 
 	vector: spacetime.GeneralFourVector = None
 	metric_tensor: spacetime.MetricTensor = None
 	coordinates: spacetime.CoordinateSystem = None
 	
-	def compute_force(self, observer: Observer) -> Symbol:
-		g = observer.coupling(self.coupling_constant) # How strongly the observer couples to the field
-		f = GeneralFourVector(self.metric_tensor, "u", 0, 0, 0, 0)
+	@abstractmethod
+	def compute_effective_tensor(self) -> None:
+		raise NotImplemented("SpinningBosonField.compute_effective_tensor() is not implemented. Use a fully-defined SpinningBosonField subclass.")
+
+	def specific_proper_force(self, observer) -> Symbol:
+		"""
+		f^i = g F^ij u_j = g F^i_j u^j
+		"""
+		self.compute_effective_tensor()
+		f = spacetime.GeneralFourVector(self.metric_tensor, "u", 0, 0, 0, 0)
 		for i in range(4):
 			fi = 0
 			for j in range(4):
-				fi = fi + (g * self.effective_tensor.uu(i, j) * observer.proper_velocity.d(j))
+				fi = fi + (self.effective_tensor.uu(i, j) * observer.proper_velocity.d(j))
 			f.vector_u[i] = fi
 		f.compute()
 		return f
@@ -384,6 +395,8 @@ class AbelianVectorField(VectorField):
 					self.effective_tensor.tensor_dd[i, j] = self.vector.d(j).diff(self.coordinates.x(i)) - self.vector.d(i).diff(self.coordinates.x(j))
 					self.effective_tensor.uu(i, j)
 
+	# Examples
+
 class NonAbelianVectorField(VectorField):
 
 	# coupling_constant
@@ -411,11 +424,82 @@ class NonAbelianVectorField(VectorField):
 	# macroscale (super-quantum) representation of
 	# reality.
 
+class TensorField(SpinningBosonField):
+
+	"""
+	The TensorField, describing exactly that.
+
+	Allows calculation of forces from a tensor
+	field where the force equation is analogous
+	to the GAV in GR.
+	"""
+
+	# coupling_constant
+	# effective_tensor
+
+	def __init__(self, et: spacetime.GeneralRankThreeTensor):
+		self.effective_tensor = et
+
+	def specific_proper_force(self, observer: Observer) -> Symbol:
+		"""
+		f^i = g F^ijk u_j u_k = g F^i_jk u^j u^k
+		"""
+		f = spacetime.GeneralFourVector(self.metric_tensor, "u", 0, 0, 0, 0)
+		for i in range(4):
+			fi = 0
+			for j in range(4):
+				for k in range(4):
+					fi = fi + (self.effective_tensor.uuu(i, j, k) * observer.proper_velocity.d(j) * observer.proper_velocity.d(k))
+			f.vector_u[i] = fi
+		f.compute()
+		return f
+
+	# Examples
+
+	@classmethod
+	def graviton(cls, arg: "something that has a ChristoffelSymbols" | spacetime.MetricTensor):
+		if type(arg) == spacetime.MetricTensor:
+			cs = spacetime.ChristoffelSymbols(arg)
+		else:
+			# the assumption is that the passed argument
+			# has a .metric_tensor or .christoffel_symbols
+			# attribute
+			if hasattr(arg, "christoffel_symbols"):
+				cs = arg.christoffel_symbols
+			elif hasattr(arg, "metric_tensor"):
+				cs = spacetime.ChristoffelSymbols(arg.metric_tensor)
+			else:
+				raise SyntaxError("Invalid arguments to produce graviton field.")
+		T = cs.to_r3_tensor()
+		return cls(T)
+
+# === Fermionic Fields === #
+
 class SpinorField(Field):
 	pass # ...spin 1/2 - not super interesting right now
 
 class RaritaSchwingerField(Field):
 	pass # ...spin 3/2 - not super interesting right now
+
+class FieldTheory(Field):
+
+	fields = []
+
+	def __init__(self, *fields):
+		self.fields = list(fields)
+		for field in self:
+			ft = type(field)
+			if (not issubclass(ft, Field)) or (ft == Field):
+				raise TypeError("FieldTheory only accepts Field subclasses as arguments.")
+
+	def __iter__(self):
+		return iter(self.fields)
+
+	def proper_acceleration_on(self, observer: Observer) -> None:
+		accel = 0
+		for field in self:
+			accel = accel + field.specific_proper_force(observer)/observer.mass
+		return accel
 
 # ===== THE OBSERVATION ENGINE ===== #
 

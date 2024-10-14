@@ -502,11 +502,12 @@ class GeneralRankThreeTensor:
 
 	tensor_uuu = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
 	tensor_ddd = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
+	tensor_udd = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
 	requisites = None
 	metric_tensor = None
 	symmetry = None
 
-	def __init__(self, metric: MetricTensor, indexing: str=None, *T, **requisites):
+	def __init__(self, metric: MetricTensor, indexing, T, **requisites):
 		self.metric_tensor = metric
 		self.requisites = requisites
 		if len(T) == 0:
@@ -517,6 +518,8 @@ class GeneralRankThreeTensor:
 			self.tensor_uuu = T
 		elif indexing == "ddd":
 			self.tensor_ddd = T
+		elif indexing == "udd":
+			self.tensor_udd = T
 		else:
 			raise IndexError("")
 
@@ -525,15 +528,17 @@ class GeneralRankThreeTensor:
 		if Configuration.autocompute:
 			self.compute()
 
-	def find_uuu(i, j, k):
+	def find_uuu(self, i, j, k):
 		if Configuration.autoindex:
 			return self.raise_indices(i, j, k)
 		return NotImplemented("GeneralTensor's contravariant finder not implemented. Try Configuration.set_autoindex(True) to use index raising.")
 
-	def find_ddd(i, j, k):
+	def find_ddd(self, i, j, k):
 		if Configuration.autoindex:
 			return self.lower_indices(i, j, k)
 		return NotImplemented("GeneralTensor's covariant finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
+	
+	def find_udd(self, i, j, k)
 
 	def uuu(self, i, j, k):
 		if self.tensor_uuu[i][j][k] is None:
@@ -541,11 +546,11 @@ class GeneralRankThreeTensor:
 			self.tensor_uuu[i][j][k] = simplify(computation)
 		return self.tensor_uuu[i][j][k]
 
-	def dd(self, i, j):
-		if self.tensor_dd[i][j][k] is None:
-			computation = self.find_dd(i, j)
-			self.tensor_dd[i][j][k] = simplify(computation)
-		return self.tensor_dd[i][j][k]
+	def ddd(self, i, j):
+		if self.tensor_ddd[i][j][k] is None:
+			computation = self.find_ddd(i, j)
+			self.tensor_ddd[i][j][k] = simplify(computation)
+		return self.tensor_ddd[i][j][k]
 
 	def compute_uuu(self):
 		for i in range(4):
@@ -560,8 +565,8 @@ class GeneralRankThreeTensor:
 					self.ddd(i, j, k)
 
 	def compute(self):
-		self.compute_uu()
-		self.compute_dd()
+		self.compute_uuu()
+		self.compute_ddd()
 
 	def raise_indices(self, i, j, k):
 		"""
@@ -574,10 +579,10 @@ class GeneralRankThreeTensor:
 		for l in range(4):
 			for m in range(4):
 				for n in range(4):
-					Tuu = Tuu + (self.metric_tensor.uu(i, l) * self.metric_tensor.uu(j, m) * self.metric_tensor.uu(k, n) * self.dd(l, m, n)) 
+					Tuuu = Tuuu + (self.metric_tensor.uu(i, l) * self.metric_tensor.uu(j, m) * self.metric_tensor.uu(k, n) * self.ddd(l, m, n)) 
 		return Tuuu
 
-	def lower_indices(self, i, j):
+	def lower_indices(self, i, j, k):
 		"""
 		Use index lowering to find covariant components (requires metric).
 		"""
@@ -588,8 +593,20 @@ class GeneralRankThreeTensor:
 		for l in range(4):
 			for m in range(4):
 				for n in range(4):
-					Tddd = Tddd + (self.metric_tensor.dd(i, l) * self.metric_tensor.dd(j, m) * self.metric_tensor.dd(k, n) * self.uu(l, m, n)) 
+					Tddd = Tddd + (self.metric_tensor.dd(i, l) * self.metric_tensor.dd(j, m) * self.metric_tensor.dd(k, n) * self.uuu(l, m, n)) 
 		return Tddd
+	
+	def mixed_indices(self, i, j, k):
+		"""
+		Use index raising to find udd components (requires metric).
+		"""
+		if self.ddd(i, j, k) is None:
+			raise RuntimeError("Cannot raise indices on tensor as the lower-index component is None.")
+
+		Tudd = 0
+		for l in range(4):
+			Tudd = Tudd + (self.metric_tensor.uu(i, l) * self.ddd(l, j, k)) 
+		return Tudd
 	
 	# Math operators
 
@@ -878,6 +895,13 @@ class ChristoffelSymbols:
 		"""
 		self.compute_udd()
 		self.compute_ddd()
+
+	def to_r3_tensor(self) -> GeneralRankThreeTensor:
+		self.compute()
+		T = GeneralRankThreeTensor(self.metric_tensor, "ddd", self.christoffel_symbols_ddd)
+		T.tensor_udd = self.christoffel_symbols_udd
+		T.compute()
+		return T
 
 class RiemannTensor:
 
