@@ -1,10 +1,13 @@
 from sympy import *
 from warnings import *
 from abc import *
+from typing import Union
 from sxl.util import *
 from sxl.error import *
 
 simplefilter("ignore") # I don't care that SymPy doesn't want None in its matrices.
+
+# ===== CONSTANTS ===== #
 
 METRIC_DERIVATIVES = "metric derivatives"
 CHRISTOFFEL_SYMBOLS = "christoffel symbols"
@@ -20,6 +23,8 @@ REAL_Lambda = 1.1056e-52
 NO_SYMMETRY = None
 SYMMETRIC = "symmetric"
 ANTISYMMETRIC = "antisymmetric"
+
+# ===== METRICS FOR SPACES ===== #
 
 class UnitSystem:
 
@@ -495,8 +500,8 @@ class GeneralRankThreeTensor:
 	access, as well as other doodads.
 	"""
 
-	tensor_uuu = [[None for i in range(4)] for j in range(4)]
-	tensor_ddd = [[None for i in range(4)] for j in range(4)]
+	tensor_uuu = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
+	tensor_ddd = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
 	requisites = None
 	metric_tensor = None
 	symmetry = None
@@ -612,15 +617,19 @@ class GeneralRankThreeTensor:
 					T.tensor_ddd[i][j][k] = self.ddd(i, j, k) - other.ddd(i, j, k)
 		return T
 
+GeneralTensor = Union[GeneralRankTwoTensor, GeneralRankThreeTensor]
+
 class GeneralFourVector:
 
 	update_alternate_indices = False
 	vector_u = [None, None, None, None]
 	vector_d = [None, None, None, None]
 	metric_tensor = None
+	coordinates: CoordinateSystem = None
 
 	def __init__(self, metric: MetricTensor, indexing: str=None, *v):
 		self.metric_tensor = metric
+		self.coordinates = metric.coordinates
 		if len(v) == 0:
 			return
 		elif len(v) != 4:
@@ -1448,6 +1457,8 @@ class GeodesicAccelerationVectors:
 	def compute(self):
 		self.compute_proper()
 		self.compute_coordinate()
+
+# ===== THE SPACETIME ===== #
 
 class Spacetime:
 

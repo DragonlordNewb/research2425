@@ -1,12 +1,15 @@
 from sxl import spacetime
-from sympy import Symbol
-from math import sqrt
+from sympy import *
+from math import *
+from abc import *
 
 DT = 0.001
 
 TIMELIKE = "TIMELIKE"
 LIGHTLIKE = "LIGHTLIKE"
 SPACELIKE = "SPACELIKE"
+
+# ===== WORLDLINES ===== #
 
 class Observer:
 
@@ -18,8 +21,10 @@ class Observer:
 	proper_velocity: spacetime.GeneralFourVector = None # Current proper linear velocity, u=dX/dtau
 	angle: spacetime.GeneralFourVector = None # Current angular position, theta
 	proper_rotation: spacetime.GeneralFourVector = None # Current angular velocity, w=dtheta/dtau
+	couplings: dict[Symbol] = None # Couplings to fields (see FIELDS)
+	mass: float = None
 
-	def __init__(self, metric: spacetime.MetricTensor, xi=None, vi=None, ti=None, wi=None):
+	def __init__(self, metric: spacetime.MetricTensor, xi=None, vi=None, ti=None, wi=None, mass=None, **couplings):
 		self.units = metric.units
 		self.metric_tensor = metric
 		self.zero = spacetime.GeneralFourVector(self.metric_tensor, "u", 0, 0, 0, 0)
@@ -27,6 +32,20 @@ class Observer:
 		self.velocity = vi if vi is not None else self.zero
 		self.angle = ti if ti is not None else self.zero
 		self.proper_rotation = wi if wi is not None else self.zero
+		self.couplings = {Symbol(cc): couplings[cc] for cc in couplings.keys()}
+		if "m" in self.couplings.keys():
+			self.mass = self.coupling("m")
+		elif mass is not None:
+			self.mass = mass
+			self.couplings[Symbol("m")] = mass
+		else:
+			raise SyntaxError("Mass must be somehow specified for an Observer.")
+
+	def coupling(self, target: str | Symbol):
+		for coupling in self.couplings.keys():
+			if coupling.name == target or coupling == target:
+				return coupling
+		return 0
 
 	def compute_lorentz_factor(self):
 		"""
@@ -186,14 +205,14 @@ class ObserverEnsemble:
 		cls.observers = observers
 	
 	@classmethod
-	def make(cls, xis, vis, tis, wis):
+	def make(cls, xis, vis, tis, wis, masses, couplings):
 		l = len(xis)
 		if l != len(vis) or l != len(tis) or l != len(wis):
 			raise SyntaxError("Invalid inputs to .make(). Must be lists of GFVs of the same length.")
 		
 		result = cls()
 		for i in range(l):
-			result.add_observer(Observer(xis[i], vis[i], tis[i], wis[i]))
+			result.add_observer(Observer(xis[i], vis[i], tis[i], wis[i], masses[i], couplings[i]))
 		return result
 	
 	@classmethod
@@ -234,6 +253,172 @@ class NullGeodesic(Geodesic):
 	def __init__(self, xi, vi):
 		Geodesic.__init__(self, xi, vi, 0)
 	
+# ===== FIELDS ===== #
+
+class Field(ABC):
+
+	"""
+	The most general Field class. Simply
+	exists to allow subclassing into more-
+	precise fields that can actually be
+	used.
+
+	The Field.compute_force() method is
+	intended to be called once in-place to
+	fill the Field.force 4-vector with the 
+	correct values.
+	"""
+
+	force: spacetime.GeneralFourVector = None
+	coupling_constant: Symbol = None
+	
+	@abstractmethod
+	def compute_force(self, observer: Observer) -> None:
+		raise NotImplemented("Field.compute_force() is not implemented. Use a fully-defined Field subclass.")
+
+class SpinningBosonField(Field):
+
+	"""
+	A field with a nonzero integer spin
+	(in practice, either 1 or 2). So differentiated
+	from a non-spinning boson field (spin 0) because
+	such fields do not typically impart force when
+	static or otherwise unperturbed.
+
+	In this case, we have an additional subclass
+	because the fields we're describing have the
+	property that the force that they put on
+	particles is given by
+
+	(spin 1) f^i = g T^ij v_j
+	(spin 2) f^i = g T^ijk v_j v_k / f^i = g T^i_jk v^j v^k
+
+	for "effective tensors" T. Technically, these
+	tensors can end up having more indices than
+	the field has spin (like in the case of the
+	QCD gluon field strength tensor, which has 
+	three indices - two "regular" indices and one
+	ranging from 1 to 8 referring to the eight
+	color charge configurations), and in this case
+	the "effective" tensor is a contraction of that
+	tensor with the appropriate vector/tensor (in
+	the case of the QCD GFS tensor, the color 
+	charge profiles).
+
+	For the EM field, the effective tensor is the
+	Faraday/EM tensor. For the strong field, the
+	effective tensor is the charge-contracted
+	QCD GFS tensor. For the gravitational field,
+	the effective tensor is, unsurprisingly, the
+	Christoffel symbol of the second kind.
+	"""
+
+	# coupling_constant
+	# def compute_force(self, observer: Observer) -> None
+
+	effective_tensor: spacetime.GeneralTensor = None
+
+	@abstractmethod
+	def compute_effective_tensor(self) -> None:
+		raise NotImplemented("SpinningBosonField.compute_effective_tensor() is not implemented. Use a fully-defined SpinningBosonField subclass.")
+
+class VectorField(SpinningBosonField):
+
+	"""
+	The VectorField class, describing
+	exactly that.
+
+	Allows calculation of forces from a vector
+	field, where the force equation is simple
+	enough.
+	"""
+
+	# coupling_constant
+	# effective_tensor
+	# def compute_effective_tensor(self) -> None
+
+	vector: spacetime.GeneralFourVector = None
+	metric_tensor: spacetime.MetricTensor = None
+	coordinates: spacetime.CoordinateSystem = None
+	
+	def compute_force(self, observer: Observer) -> Symbol:
+		g = observer.coupling(self.coupling_constant) # How strongly the observer couples to the field
+		f = GeneralFourVector(self.metric_tensor, "u", 0, 0, 0, 0)
+		for i in range(4):
+			fi = 0
+			for j in range(4):
+				fi = fi + (g * self.effective_tensor.uu(i, j) * observer.proper_velocity.d(j))
+			f.vector_u[i] = fi
+		f.compute()
+		return f
+
+class AbelianVectorField(VectorField):
+
+	"""
+	The AbelianVectorField class, describing
+	exactly that.
+
+	Allows calculation of forces from a vector
+	field where the effective tensor (see the
+	SpinningBosonField superclass) is just the
+	commutator of the underlying vector field.
+	"""
+
+	# coupling_constant
+	# effective_tensor
+	# vector
+	# metric_tensor
+	# coordinates
+
+	def __init__(self, vector: spacetime.GeneralFourVector) -> None:
+		self.vector = vector
+		self.metric_tensor = self.vector.metric_tensor
+		self.coordinates = self.metric_tensor.coordinates
+
+	def compute_effective_tensor(self):
+		if self.effective_tensor is None:
+			self.effective_tensor = spacetime.GeneralRankTwoTensor(self.metric_tensor, "uu", spacetime.ANTISYMMETRIC)
+			self.vector.compute()
+			for i in range(4):
+				for j in range(4):
+					self.effective_tensor.tensor_dd[i, j] = self.vector.d(j).diff(self.coordinates.x(i)) - self.vector.d(i).diff(self.coordinates.x(j))
+					self.effective_tensor.uu(i, j)
+
+class NonAbelianVectorField(VectorField):
+
+	# coupling_constant
+	# effective_tensor
+	# def compute_effective_tensor(self) -> None
+	# vector
+	# metric_tensor
+	# coordinates
+
+	"""
+	The AbelianVectorField class, describing
+	exactly that.
+
+	Allows calculation of forces from a vector
+	field where the effective tensor (see the
+	SpinningBosonField superclass) is the 
+	contraction over the group indices of a
+	more-complicated rank-three tensor (two
+	spacetime indices and one group indices),
+	contracting with the profiles of the group.
+	"""
+
+	pass # ...for now. The strong and weak fields
+	# need not be implemented for an accurate
+	# macroscale (super-quantum) representation of
+	# reality.
+
+class SpinorField(Field):
+	pass # ...spin 1/2 - not super interesting right now
+
+class RaritaSchwingerField(Field):
+	pass # ...spin 3/2 - not super interesting right now
+
+# ===== THE OBSERVATION ENGINE ===== #
+
 class ObservationEngine:
 
 	observer = None
