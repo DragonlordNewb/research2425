@@ -275,7 +275,7 @@ class Field(ABC):
 	def specific_proper_force(self, observer: Observer) -> None:
 		raise NotImplemented("Field.specific_proper_force() is not implemented. Use a fully-defined Field subclass.")
 	
-class ForceField(Field):
+class GeneralField(Field):
 
 	def __init__(self, f: spacetime.GeneralFourVector):
 		self.specific_force = f
@@ -363,6 +363,14 @@ class VectorField(SpinningBosonField):
 		f.compute()
 		return f
 
+class GeneralVectorField(VectorField):
+
+	def __init__(self, et: spacetime.GeneralRankTwoTensor) -> None:
+		self.effective_tensor = et
+	
+	def compute_effective_tensor(self):
+		pass
+
 class AbelianVectorField(VectorField):
 
 	"""
@@ -394,8 +402,6 @@ class AbelianVectorField(VectorField):
 				for j in range(4):
 					self.effective_tensor.tensor_dd[i, j] = self.vector.d(j).diff(self.coordinates.x(i)) - self.vector.d(i).diff(self.coordinates.x(j))
 					self.effective_tensor.uu(i, j)
-
-	# Examples
 
 class NonAbelianVectorField(VectorField):
 
@@ -454,25 +460,6 @@ class TensorField(SpinningBosonField):
 		f.compute()
 		return f
 
-	# Examples
-
-	@classmethod
-	def graviton(cls, arg: "something that has a ChristoffelSymbols" | spacetime.MetricTensor):
-		if type(arg) == spacetime.MetricTensor:
-			cs = spacetime.ChristoffelSymbols(arg)
-		else:
-			# the assumption is that the passed argument
-			# has a .metric_tensor or .christoffel_symbols
-			# attribute
-			if hasattr(arg, "christoffel_symbols"):
-				cs = arg.christoffel_symbols
-			elif hasattr(arg, "metric_tensor"):
-				cs = spacetime.ChristoffelSymbols(arg.metric_tensor)
-			else:
-				raise SyntaxError("Invalid arguments to produce graviton field.")
-		T = cs.to_r3_tensor()
-		return cls(T)
-
 # === Fermionic Fields === #
 
 class SpinorField(Field):
@@ -500,6 +487,118 @@ class FieldTheory(Field):
 		for field in self:
 			accel = accel + field.specific_proper_force(observer)/observer.mass
 		return accel
+
+	@classmethod
+	def merge(cls, *fts):
+		fields = []
+		for ft in fts:
+			for f in ft:
+				fields.append(f)
+		return cls(*fields)
+
+	# Examples
+
+	@classmethod
+	def graviton(cls, arg):
+		if type(arg) == spacetime.MetricTensor:
+			cs = spacetime.ChristoffelSymbols(arg)
+		else:
+			# the assumption is that the passed argument
+			# has a .metric_tensor or .christoffel_symbols
+			# attribute
+			if hasattr(arg, "christoffel_symbols"):
+				cs = arg.christoffel_symbols
+			elif hasattr(arg, "metric_tensor"):
+				cs = spacetime.ChristoffelSymbols(arg.metric_tensor)
+			else:
+				raise SyntaxError("Invalid arguments to produce graviton field.")
+		T = cs.to_r3_tensor()
+		return cls(TensorField(T))
+
+	@classmethod
+	def gravitational(cls, arg): return cls.graviton(arg)
+
+	@classmethod 
+	def gravidynamics(cls, arg): return cls.graviton(arg)
+
+	@classmethod
+	def photon(cls, *args):
+		pass
+
+	@classmethod
+	def electromagnetic(cls, *args): return cls.photon(*args)
+
+	@classmethod
+	def electrodynamics(cls, *args): return cls.photon(*args)
+
+	@classmethod
+	def gluon(cls, *args):
+		pass
+
+	@classmethod
+	def color(cls, *args): return cls.gluon(*args)
+
+	@classmethod
+	def chromodynamic(cls, *args): return cls.gluon(*args)
+
+	@classmethod
+	def w_z(cls, *args):
+		pass
+
+	@classmethod
+	def weak(cls, *args): return cls.w_z(*args)
+
+	@classmethod
+	def flavordynamic(cls, *args): return cls.w_z(*args)
+
+	@classmethod
+	def electroweak(cls, a1, a2):
+		return cls.merge(cls.photon(a1), cls.w_z(a2))
+
+	@classmethod
+	def chromelectric(cls, a1, a2):
+		return cls.merge(cls.gluon(a1), cls.photon(a2))
+
+	@classmethod
+	def chromoweak(cls, a1, a2):
+		return cls.merge(cls.gluon(a1), cls.w_z(a2))
+
+	@classmethod
+	def chromelectroweak(cls, a1, a2, a3):
+		return cls.merge(cls.gluon(a1), cls.photon(a2), cls.w_z(a3))
+
+	@classmethod
+	def gravelectric(cls, a1, a2):
+		return cls.merge(cls.graviton(a1), cls.photon(a2))
+
+	@classmethod
+	def gravicolor(cls, a1, a2):
+		return cls.merge(cls.graviton(a1), cls.gluon(a2))
+
+	@classmethod
+	def graviweak(cls, a1, a2):
+		return cls.merge(cls.graviton(a1), cls.w_z(a2))
+
+	@classmethod
+	def gravelectroweak(cls, a1, a2, a3):
+		return cls.merge(cls.graviton(a1), cls.photon(a2), cls.w_z(a3))
+
+	@classmethod
+	def gravichromelectric(cls, a1, a2, a3):
+		return cls.merge(cls.graviton(a1), cls.gluon(a2), cls.photon(a3))
+
+	@classmethod
+	def gravichromoweak(cls, a1, a2, a3):
+		return cls.merge(cls.graviton(a1), cls.gluon(a2), cls.w_z(a3))
+
+	@classmethod
+	def unified(cls, a1, a2, a3, a4):
+		return cls.merge(
+			cls.graviton(a1),
+			cls.gluon(a2),
+			cls.photon(a3),
+			cls.w_z(a4)
+		)
 
 # ===== THE OBSERVATION ENGINE ===== #
 
