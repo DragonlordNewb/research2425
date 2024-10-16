@@ -3,7 +3,6 @@ import socket
 import sys
 import time
 
-TARGET_IP = None
 SERIAL_PORT_NAME = "/dev/ttyACM0"
 BAUD = 9600
 TCP_PORT = 0x4E48
@@ -15,17 +14,15 @@ def println(*args):
 	print(*args, end="                         \r")
 
 if __name__ == "__main__":
-	if len(sys.argv) == 5:
-		TARGET_IP, SERIAL_PORT_NAME, BAUD, tcp_PORT = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
-	elif len(sys.argv) == 4:
-		TARGET_IP, SERIAL_PORT_NAME, BAUD = sys.argv[1], sys.argv[2], int(sys.argv[3])
+	if len(sys.argv) == 4:
+		SERIAL_PORT_NAME, BAUD, tcp_PORT = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 	elif len(sys.argv) == 3:
-		TARGET_IP, SERIAL_PORT_NAME = sys.argv[1:3]
+		SERIAL_PORT_NAME, BAUD = sys.argv[1], int(sys.argv[2])
 	elif len(sys.argv) == 2:
-		TARGET_IP = sys.argv[1]
+		SERIAL_PORT_NAME = sys.argv[1]
 	else:
 		print("Syntax error: correct syntax requires at least a target IP")
-		print("Correct syntax: \"python3 relay.py <IP> [<serial>] [<bauds>] [<tcp port>]\"")
+		print("Correct syntax: \"python3 relay.py [<serial>] [<bauds>] [<tcp port>]\"")
 		exit(-1)
 
 	println("Loading serial connection ...")
