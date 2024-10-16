@@ -20,10 +20,6 @@ if __name__ == "__main__":
 		SERIAL_PORT_NAME, BAUD = sys.argv[1], int(sys.argv[2])
 	elif len(sys.argv) == 2:
 		SERIAL_PORT_NAME = sys.argv[1]
-	else:
-		print("Syntax error: correct syntax requires at least a target IP")
-		print("Correct syntax: \"python3 relay.py [<serial>] [<bauds>] [<tcp port>]\"")
-		exit(-1)
 
 	println("Loading serial connection ...")
 	ser_sload = time.time()
