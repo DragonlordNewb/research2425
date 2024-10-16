@@ -82,10 +82,10 @@ if __name__ == "__main__":
 					except:
 						print("ERROR\tERROR\t" + str(timeout) + "\t█")
 					if num == 0:
-						print("ERROR\t" + last + "\t" + str(timeout) + "\t█")
+						print("ERROR\tERROR\t" + str(timeout) + "\t█")
 					else:
+						last = num
 						println("OK\t" + last + "\t" + str(timeout) + "\t█")
-						last = data
 						tcp_socket.send(data.encode("utf-8"))
 				else:
 					println("OK\t" + last + "\t" + str(timeout))
