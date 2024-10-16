@@ -43,7 +43,7 @@ if __name__ == "__main__":
 	print("  Found relay IPv4 address -", relay_ip)
 	println("  Opening TCP socket ...")
 	tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	print("  Successfully opened TCP socket on network as " + relay_hn + ".")
+	print("  Successfully opened TCP socket on network as " + relay_ip + ".")
 	println("  Binding socket to address ...")
 	tcp_socket.bind((relay_ip, TCP_PORT))
 	addr_str = relay_ip + ":" + str(TCP_PORT)
