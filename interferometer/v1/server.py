@@ -75,13 +75,14 @@ if __name__ == "__main__":
 						try:
 							num = float(data)
 						except:
-							print("ERROR\tERROR\t" + str(timeout/20) + "\t█\tDATA FEED ERROR")
+							println("ERROR\tERROR\t" + str(timeout/20) + "\t█\tDATA FEED ERROR")
 							continue
 						if num == 0:
-							print("ERROR\tERROR\t" + str(timeout/20) + "\t█\tINTERFEROMETER SYSTEM ERROR")
+							println("ERROR\tERROR\t" + str(timeout/20) + "\t█\tINTERFEROMETER SYSTEM ERROR")
 							continue
 						else:
 							last = num
+							timeout = 0
 							println("OK\t" + str(last) + "\t" + str(timeout/20) + "\t█")
 							conn.send(data.encode("utf-8"))
 					elif timeout < 100:
@@ -91,6 +92,13 @@ if __name__ == "__main__":
 					else:
 						println("ERROR\tERROR\tTIMEOUT\tINTERFEROMETER TIMEOUT ERROR")
 			except KeyboardInterrupt:
+				if input("Shut down server? (y/n) ") == "n":
+					tcp_socket.close()
+					conn.close()
+					serial_port.close()
+					print("Server systems closed and shut down.")
+					exit(0)
+	except KeyboardInterrupt:
 				if input("Shut down server? (y/n) ") == "n":
 					tcp_socket.close()
 					conn.close()
