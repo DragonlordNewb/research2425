@@ -35,10 +35,12 @@ if __name__ == "__main__":
 	ser_dt = ser_eload - ser_sload
 	print("Successfully loaded serial connection (" + str(ser_dt) + ").")
 	print("Loading network connection ...")
-	println("  Finding relay information ...")
-	relay_hn = socket.gethostname()
-	relay_ip = socket.gethostbyname(relay_hn)
-	print("  Found relay information - hostname", relay_hn, "IPv4", relay_ip)
+	println("  Finding relay address ...")
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	s.connect(("8.8.8.8", 80))
+	relay_ip = s.getsockname()[0]
+	s.close()
+	print("  Found relay IPv4 address -", relay_ip)
 	println("  Opening TCP socket ...")
 	tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	print("  Successfully opened TCP socket on network as " + relay_hn + ".")
