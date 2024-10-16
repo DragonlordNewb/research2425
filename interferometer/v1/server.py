@@ -83,7 +83,7 @@ if __name__ == "__main__":
 						else:
 							last = num
 							timeout = 0
-							println("OK\t" + str(last) + "\t" + str(timeout/20) + "\t█")
+							println("OKAY " + str(last) + "  \t" + str(timeout/20) + "\t█")
 							conn.send(data.encode("utf-8"))
 					elif timeout < 100:
 						println("OK\t" + str(last) + "\t" + str(timeout/20))
