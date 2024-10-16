@@ -39,56 +39,62 @@ if __name__ == "__main__":
 	print("  Successfully opened TCP socket on network as " + relay_ip + ".")
 	println("  Binding socket to address ...")
 	tcp_socket.bind((relay_ip, TCP_PORT))
-	addr_str = relay_ip + ":" + str(TCP_PORT)
-	tcp_socket.listen(1)
-	print("  TCP socket bound to relay address at " + addr_str + ".")
-	print("Finished network connection setup.")
-	println("Awaiting connection from client ...")
 	try:
-		conn, addr = tcp_socket.accept()
-		client_ip, client_port = addr
-		addr_str = client_ip + ":" + str(client_port)
-	except KeyboardInterrupt:
-		print("Server setup aborted. Quitting ...             ")
+		addr_str = relay_ip + ":" + str(TCP_PORT)
+		tcp_socket.listen(1)
+		print("  TCP socket bound to relay address at " + addr_str + ".")
+		print("Finished network connection setup.")
+		println("Awaiting connection from client ...")
 		try:
-			tcp_socket.close()
-		except:
-			pass
-		serial_port.close()
-		exit(1)
-	print("Got connection from client at " + addr_str + ".")
-
-	serial_port.readline()
-
-	timeout = 0
-	last = None
-
-	print("Status\tData\tTimeout\tNDPR")
-
-	while True:
-		try:
-			while True:
-				if serial_port.in_waiting > 0:
-					data = serial_port.readline().decode("utf-8").strip()
-					try:
-						num = float(data)
-					except:
-						print("ERROR\tERROR\t" + str(timeout) + "\t█")
-						continue
-					if num == 0:
-						print("ERROR\tERROR\t" + str(timeout) + "\t█")
-						continue
-					else:
-						last = num
-						println("OK\t" + str(last) + "\t" + str(timeout) + "\t█")
-						tcp_socket.send(data.encode("utf-8"))
-				else:
-					println("OK\t" + last + "\t" + str(timeout))
-					timeout += .1
-					time.sleep(.1)
+			conn, addr = tcp_socket.accept()
+			client_ip, client_port = addr
+			addr_str = client_ip + ":" + str(client_port)
 		except KeyboardInterrupt:
-			if input("Shut down server? (y/n) ") == n:
+			print("Server setup aborted. Quitting ...             ")
+			try:
 				tcp_socket.close()
-				serial_port.close()
-				print("Server systems closed and shut down.")
-				exit(0)
+			except:
+				pass
+			serial_port.close()
+			exit(1)
+		print("Got connection from client at " + addr_str + ".")
+
+		serial_port.readline()
+
+		timeout = 0
+		last = None
+
+		print("Status\tData\tTimeout\tNDPR")
+
+		while True:
+			try:
+				while True:
+					if serial_port.in_waiting > 0:
+						data = serial_port.readline().decode("utf-8").strip()
+						try:
+							num = float(data)
+						except:
+							print("ERROR\tERROR\t" + str(timeout) + "\t█")
+							continue
+						if num == 0:
+							print("ERROR\tERROR\t" + str(timeout) + "\t█")
+							continue
+						else:
+							last = num
+							println("OK\t" + str(last) + "\t" + str(timeout) + "\t█")
+							tcp_socket.send(data.encode("utf-8"))
+					else:
+						println("OK\t" + last + "\t" + str(timeout))
+						timeout += .1
+						time.sleep(.1)
+			except KeyboardInterrupt:
+				if input("Shut down server? (y/n) ") == n:
+					tcp_socket.close()
+					serial_port.close()
+					print("Server systems closed and shut down.")
+					exit(0)
+	except Exception as e:
+		print("Fatal error; TCP address and serial port saved!")
+		tcp_socket.close()
+		serial_port.close()
+		raise e
