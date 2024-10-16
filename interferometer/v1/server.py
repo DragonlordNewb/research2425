@@ -53,6 +53,7 @@ if __name__ == "__main__":
 			print("Server setup aborted. Quitting ...             ")
 			try:
 				tcp_socket.close()
+				conn.close()
 			except:
 				pass
 			serial_port.close()
@@ -82,7 +83,7 @@ if __name__ == "__main__":
 						else:
 							last = num
 							println("OK\t" + str(last) + "\t" + str(timeout) + "\t█")
-							tcp_socket.send(data.encode("utf-8"))
+							conn.send(data.encode("utf-8"))
 					else:
 						println("OK\t" + last + "\t" + str(timeout))
 						timeout += .1
@@ -95,6 +96,7 @@ if __name__ == "__main__":
 					exit(0)
 	except Exception as e:
 		print("Fatal error; TCP address and serial port saved!")
+		conn.close()
 		tcp_socket.close()
 		serial_port.close()
 		raise e
