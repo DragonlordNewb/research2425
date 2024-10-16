@@ -12,7 +12,7 @@ serial_port: serial.Serial = None
 tcp_socket: socket.socket = None
 
 def println(*args):
-	print(*args, end="\r                     ")
+	print(*args, end="                         \r")
 
 if __name__ == "__main__":
 	if len(sys.argv) == 5:
@@ -49,9 +49,18 @@ if __name__ == "__main__":
 	print("  TCP socket bound to relay address at " + addr_str + ".")
 	print("Finished network connection setup.")
 	println("Awaiting connection from client ...")
-	conn, addr = tcp_socket.accept()
-	client_ip, client_port = addr
-	addr_str = client_ip + ":" + str(client_port)
+	try:
+		conn, addr = tcp_socket.accept()
+		client_ip, client_port = addr
+		addr_str = client_ip + ":" + str(client_port)
+	except KeyboardInterrupt:
+		print("Server setup aborted. Quitting ...             ")
+		try:
+			tcp_socket.close()
+		except:
+			pass
+		serial_port.close()
+		exit(1)
 	print("Got connection from client at " + addr_str + ".")
 	println("Transmitting data live...\t\tNO FEED")
 
