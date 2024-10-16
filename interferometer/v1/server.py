@@ -85,7 +85,7 @@ if __name__ == "__main__":
 							println("OK\t" + str(last) + "\t" + str(timeout) + "\t█")
 							conn.send(data.encode("utf-8"))
 					else:
-						println("OK\t" + last + "\t" + str(timeout))
+						println("OK\t" + str(last) + "\t" + str(timeout))
 						timeout += .1
 						time.sleep(.1)
 			except KeyboardInterrupt:
