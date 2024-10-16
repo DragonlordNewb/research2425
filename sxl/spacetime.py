@@ -505,8 +505,7 @@ class GeneralRankThreeTensor:
 	tensor_udd = [[[None for i in range(4)] for j in range(4)] for k in range(4)]
 	requisites = None
 	metric_tensor = None
-	symmetry = None
-
+	
 	def __init__(self, metric: MetricTensor, indexing, T, **requisites):
 		self.metric_tensor = metric
 		self.requisites = requisites
@@ -522,8 +521,6 @@ class GeneralRankThreeTensor:
 			self.tensor_udd = T
 		else:
 			raise IndexError("")
-
-		self.symmetry = symmetry
 
 		if Configuration.autocompute:
 			self.compute()
