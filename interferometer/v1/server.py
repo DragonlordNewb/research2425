@@ -81,11 +81,13 @@ if __name__ == "__main__":
 						num = float(data)
 					except:
 						print("ERROR\tERROR\t" + str(timeout) + "\t█")
+						continue
 					if num == 0:
 						print("ERROR\tERROR\t" + str(timeout) + "\t█")
+						continue
 					else:
 						last = num
-						println("OK\t" + last + "\t" + str(timeout) + "\t█")
+						println("OK\t" + str(last) + "\t" + str(timeout) + "\t█")
 						tcp_socket.send(data.encode("utf-8"))
 				else:
 					println("OK\t" + last + "\t" + str(timeout))
