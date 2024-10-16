@@ -65,7 +65,7 @@ if __name__ == "__main__":
 		timeout = 0
 		last = None
 
-		print("Status\tData\tTimeout\tNDPR")
+		print("Status\tData\tTimeout\t\tNDPR")
 
 		while True:
 			try:
@@ -75,22 +75,25 @@ if __name__ == "__main__":
 						try:
 							num = float(data)
 						except:
-							print("ERROR\tERROR\t" + str(timeout) + "\t█")
+							print("ERROR\tERROR\t" + str(timeout/20) + "\t█\tDATA FEED ERROR")
 							continue
 						if num == 0:
-							print("ERROR\tERROR\t" + str(timeout) + "\t█")
+							print("ERROR\tERROR\t" + str(timeout/20) + "\t█\tINTERFEROMETER SYSTEM ERROR")
 							continue
 						else:
 							last = num
-							println("OK\t" + str(last) + "\t" + str(timeout) + "\t█")
+							println("OK\t" + str(last) + "\t" + str(timeout/20) + "\t█")
 							conn.send(data.encode("utf-8"))
+					elif timeout < 100:
+						println("OK\t" + str(last) + "\t" + str(timeout/20))
+						timeout += 1
+						time.sleep(.05)
 					else:
-						println("OK\t" + str(last) + "\t" + str(timeout))
-						timeout += .1
-						time.sleep(.1)
+						println("ERROR\tERROR\tTIMEOUT\tINTERFEROMETER TIMEOUT ERROR")
 			except KeyboardInterrupt:
-				if input("Shut down server? (y/n) ") == n:
+				if input("Shut down server? (y/n) ") == "n":
 					tcp_socket.close()
+					conn.close()
 					serial_port.close()
 					print("Server systems closed and shut down.")
 					exit(0)
