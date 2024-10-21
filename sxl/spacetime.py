@@ -364,6 +364,20 @@ class MetricTensor:
 		r = coords.x(1)
 		return cls(coords, [[units.c**2, phi/2, 0, 0], [phi/2, -1, 0, 0], [0, 0, -r**2, 0], [0, 0, 0, -1]], "dd")
 
+	@classmethod
+	def lvlf_txyz(cls, units=UnitSystem.si()):
+		"""
+		The lambdavacuum lapse-field warp drive
+		in Cartesian coordinates.
+
+		Not yet tested.
+		"""
+		coords = CoordinateSystem.txyz()
+		phi = Function("phi")(*coords.coordinates)
+		v_s = Function("v_s")(coords.x(0))
+
+		return cls(coords, [[units.c**2 + (phi*v_s), 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1]], "dd")
+
 class GeneralRankTwoTensor:
 
 	"""
@@ -535,7 +549,10 @@ class GeneralRankThreeTensor:
 			return self.lower_indices(i, j, k)
 		return NotImplemented("GeneralTensor's covariant finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
 	
-	def find_udd(self, i, j, k)
+	def find_udd(self, i, j, k):
+		if Configuration.autoindex:
+			return self.mixed_indices(i, j, k)
+		return NotImplemented("GeneralTensor's mixed-index finder not implemented. Try Configuration.set_autoindex(True) to use index lowering.")
 
 	def uuu(self, i, j, k):
 		if self.tensor_uuu[i][j][k] is None:

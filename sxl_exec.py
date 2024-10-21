@@ -5,8 +5,8 @@ import sympy
 
 units = sxl.spacetime.UnitSystem.si_ncc()
 coords = sxl.spacetime.CoordinateSystem.trtp()
-metric = sxl.spacetime.MetricTensor.schwarzschild_trtp(units)
-st = sxl.spacetime.Spacetime(metric, units, M=1000)
+metric = sxl.spacetime.MetricTensor.lvlf_txyz(units)
+st = sxl.spacetime.Spacetime(metric, units)
 
 st.solve()
 
@@ -14,4 +14,4 @@ print()
 
 print("Christoffel symbols of the second kind:")
 
-sympy.pprint(st.riemann_tensor.riemann_tensor_uddd)
+sympy.pprint(st.christoffel_symbols.christoffel_symbols_udd)

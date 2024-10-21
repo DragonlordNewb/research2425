@@ -72,16 +72,11 @@ if __name__ == "__main__":
 				while True:
 					if serial_port.in_waiting > 0:
 						data = serial_port.readline().decode("utf-8").strip()
-						try:
-							num = float(data)
-						except:
-							println("ERROR\tERROR\t" + str(timeout/20) + "\t█\tDATA FEED ERROR")
-							continue
-						if num == 0:
+						if float(str(data).split(" ")[0]) == 0:
 							println("ERROR\tERROR\t" + str(timeout/20) + "\t█\tINTERFEROMETER SYSTEM ERROR")
 							continue
 						else:
-							last = num
+							last = data
 							timeout = 0
 							println("OKAY " + str(last) + "  \t" + str(timeout/20) + "\t█")
 							conn.send(data.encode("utf-8"))
