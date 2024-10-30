@@ -505,6 +505,8 @@ class GeneralRankTwoTensor:
 				T.tensor_dd[i][j] = self.dd(i, j) - other.dd(i, j)
 		return T
 
+Tensor2 = GeneralRankTwoTensor
+
 class GeneralRankThreeTensor:
 
 	"""
@@ -648,7 +650,46 @@ class GeneralRankThreeTensor:
 					T.tensor_ddd[i][j][k] = self.ddd(i, j, k) - other.ddd(i, j, k)
 		return T
 
+Tensor3 = GeneralRankThreeTensor
+
 GeneralTensor = Union[GeneralRankTwoTensor, GeneralRankThreeTensor]
+
+class ThreeVector:
+
+	vector = [None, None, None]:
+
+	def __init__(self, x, y, z):
+		self.vector = [x, y, z]
+
+	def x(self, i):
+		if i == 0:
+			raise TypeError("ThreeVectors do not have x(0) coordinates; use FourVectors instead.")
+		elif i == 1:
+			return self.x
+		elif i == 2:
+			return self.y 
+		elif i == 3:
+			return self.z
+		
+	def u(self, i):
+		return self.x(i)
+	
+	def d(self, i):
+		return self.x(i)
+
+	def __add__(self, o):
+		return ThreeVector(self.x+o.x, self.y+o.y, self.z+o.z)
+	
+	def __sub__(self, o):
+		return ThreeVector(self.x-o.x, self.y-o.y, self.z-o.z)
+	
+	def __mul__(self, s):
+		return ThreeVector(self.x*s, self.y*s, self.z*s)
+	
+	def __truediv__(self, s):
+		return ThreeVector(self.x/s, self.y/s, self.z/s)
+	
+Vector3 = ThreeVector
 
 class GeneralFourVector:
 
@@ -806,6 +847,8 @@ class GeneralFourVector:
 			for j in range(4):
 				ds2 = ds2 + self.metric_tensor.dd(i, j) * self.u(i) * self.u(j)
 		return ds2
+
+Vector4 = GeneralFourVector
 
 # ===== EINSTEIN FIELD EQUATION COMPONENTS ===== #
 
@@ -1625,3 +1668,23 @@ class Spacetime:
 			s = "Insufficient parameterization to evaluate expression (underdetermined); symbols remaining: " + ", ".join(map(str, list(value.free_symbols)))
 			raise UnderdeterminationError(s)
 		return value
+
+	def spacetime_interval(self, dx: GeneralFourVector, x: GeneralFourVector, metric_indexing="dd", **kwargs) -> None:
+		if type(dx) == GeneralThreeVector:
+			dx = GeneralFourVector(self.metric_tensor, "u", 1, dx.x(1), dx.x(2), dx.x(3))
+		ds = 0
+		if metric_indexing == "dd":
+			for i in range(4):
+				for j in range(4):
+					ds += self.metric_tensor.dd(i, j) * dx.u(i) * dx.u(j)
+		elif metric_indexing == "uu":
+			for i in range(4):
+				for j in range(4):
+					ds += self.metric_tensor.uu(i, j) * dx.d(i) * dx.d(j)
+		return self.parameterize(ds, x, **kwargs)
+
+	def proper_time_lapse(self, *args, **kwargs):
+		if len(args) == 1 and len(kwargs) == 0:
+			return args[0] / self.units.c**2
+		else:
+			return self.proper_time_lapse(self.spacetime_interval(*args, **kwargs))
