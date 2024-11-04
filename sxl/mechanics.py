@@ -1,5 +1,5 @@
 from sxl import spacetime
-from sxl import observer
+from old import observer
 from sympy import Matrix
 from sympy import cos
 from sympy import sin

@@ -26,6 +26,7 @@ class Configuration:
 
 	verbose: bool = True
 	autocompute: bool = False
+	autocorrect: bool = True
 	autoindex: bool = True
 
 	@staticmethod
@@ -44,6 +45,13 @@ class Configuration:
 	def set_autoindex(value: bool):
 		if type(value) != bool:
 			raise TypeError("Must set sxl.util.Configuration.autoindex to a bool value")
+		Configuration.autoindex = value
+		
+	@staticmethod
+	def set_autocorrect(value: bool):
+		if type(value) != bool:
+			raise TypeError("Must set sxl.util.Configuration.autocorrect to a bool value")
+		Configuration.autocorrect = value
 
 def az(x):
 	if x < 10:
