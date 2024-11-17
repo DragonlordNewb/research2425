@@ -5,7 +5,7 @@ import time
 import numpy
 import random
 
-if len(sys.argv) not in (2, 3):
+if len(sys.argv) not in (3, 4):
 	print("Invalid syntax (correct syntax: \"python3 server.py <serial port> <server host> [-t]\")")
 	exit()
 
@@ -28,7 +28,8 @@ def main():
 	print("Server address:", SERVER_HOST + ":" + str(SERVER_PORT))
 	print("Testing mode:", TESTING_MODE)
 	# Initialize Serial Connection
-	ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+	if not TESTING_MODE:
+		ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
 	
 	# Initialize Socket Server
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
