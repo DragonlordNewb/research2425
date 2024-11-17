@@ -45,6 +45,7 @@ def main():
 			while True:
 				print("Sending dummy data")
 				client_socket.sendall(str(normal_dist(2000, 2)).encode("utf-8") + b"\n")
+				time.sleep(1)
 		else:
 			while True:
 				# Read line from Serial
@@ -55,7 +56,8 @@ def main():
 	except KeyboardInterrupt:
 		print("Shutting down...")
 	finally:
-		ser.close()
+		if not TESTING_MODE:
+			ser.close()
 		client_socket.close()
 		server_socket.close()
 
