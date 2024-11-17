@@ -38,8 +38,9 @@ def main():
 	try:
 		if TESTING_MODE:
 			while True:
-				print("Sending dummy data")
-				client_socket.sendall(("GOOD " + str(random.randint(2000, 2100))).encode("utf-8") + b"\n")
+				s = ("GOOD " + str(random.randint(2000, 2100)))
+				print("Sending dummy data:", s)
+				client_socket.sendall(s.encode("utf-8") + b"\n")
 				time.sleep(1)
 		else:
 			while True:
