@@ -2,16 +2,11 @@ import serial
 import socket
 import sys
 import time
-import numpy
 import random
 
 if len(sys.argv) not in (3, 4):
 	print("Invalid syntax (correct syntax: \"python3 server.py <serial port> <server host> [-t]\")")
 	exit()
-
-def normal_dist(mean, sd):
-	prob_density = (numpy.pi*sd) * numpy.exp(-0.5*(((random.randint(-1000,1000)/1000)-mean)/sd)**2)
-	return prob_density
 
 # Serial configuration
 SERIAL_PORT = sys.argv[1]
@@ -44,7 +39,7 @@ def main():
 		if TESTING_MODE:
 			while True:
 				print("Sending dummy data")
-				client_socket.sendall(str(normal_dist(2000, 2)).encode("utf-8") + b"\n")
+				client_socket.sendall(("GOOD " + str(random.randint(2000, 2100))).encode("utf-8") + b"\n")
 				time.sleep(1)
 		else:
 			while True:
