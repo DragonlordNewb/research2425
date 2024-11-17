@@ -25,7 +25,7 @@ TESTING_MODE = len(sys.argv) == 3
 
 def main():
 	print("Serial port:", SERIAL_PORT)
-	print("Server address:" SERVER_HOST + ":" + str(SERVER_PORT))
+	print("Server address:", SERVER_HOST + ":" + str(SERVER_PORT))
 	print("Testing mode:", TESTING_MODE)
 	# Initialize Serial Connection
 	ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
