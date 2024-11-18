@@ -46,7 +46,7 @@ def main():
 			while True:
 				# Read line from Serial
 				if ser.in_waiting > 0:
-					data = ser.readline().decode('utf-8').strip()
+					data = ser.readline().decode('utf-8').strip().split(".")[0]
 					print(f"Received: {data}")
 					client_socket.sendall(data.encode('utf-8') + b'\n')  # Send to client
 	except KeyboardInterrupt:
