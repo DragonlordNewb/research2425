@@ -7,7 +7,7 @@
 #define YELLOW_LED_POWER 5        // Pin for yellow LED - Yellow LED on: system calibration in process - Yellow LED blink: activation warning
 
 #define TRIGGER_VOLTAGE_LEVEL 512 // Analog read input (ranging 0-1023) for measurement trigger
-#define MEASUREMENT_COUNT 25     // Number of measurements per data point
+#define MEASUREMENT_COUNT 1     // Number of measurements per data point
 #define LASER_COOLDOWN_DELAY 50   // Laser cooldown delay, in milliseconds, between measurements 
 #define WEAK_SIGNAL_THRESHOLD 10  // Tick threshold below which the signal is considered weak
 #define USE_CONTROL_SENSOR false   // true: check for time delay between control and test triggers - false: check for time delay between laser volting and test trigger
