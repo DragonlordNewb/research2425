@@ -1,12 +1,26 @@
-from sxl.spacetime import GeneralFourVector as GFV
-from sxl.spacetime import MetricTensor as MT
-from sxl.spacetime import UnitSystem as US
+from sxl.spacetime import *
+from sxl.einstein import *
+from sympy import *
 
-m = MT.minkowski_txyz(US.si_ncc())
+coords = Coordinates("t r phi theta")
+t, r, th, p = coords.coordinate_symbols
+c, G, M = symbols("c G M")
+schwarzschild = 1 - (2 * G * M)/(r * c**2)
+metric = MetricTensor([
+	[c**2, 0, 0, 0],
+	[0, -1, 0, 0],
+	[0, 0, -r**2, 0],
+	[0, 0, 0, -r**2 * sin(th)**2]
+], coords)
 
-X = GFV(m, "u", 1, 2, 3, 4)
-Y = GFV(m, "u", 2, 3, 4, 5)
-print(X.d(0), X.d(1), X.d(2), X.d(3))
-print(X)
-print(Y)
-print(X + Y)
+manifold = Manifold(metric)
+
+manifold.define(ChristoffelSymbols)
+
+pprint(metric.co_diff(1, 0, 0))
+
+manifold.of(ChristoffelSymbols).solve()
+pprint(manifold.of(ChristoffelSymbols).mixed()[0])
+pprint(manifold.of(ChristoffelSymbols).mixed()[1])
+pprint(manifold.of(ChristoffelSymbols).mixed()[2])
+pprint(manifold.of(ChristoffelSymbols).mixed()[3])

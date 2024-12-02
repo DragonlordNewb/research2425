@@ -2,6 +2,8 @@ import sys
 import sympy as sp
 import math
 import time
+import functools
+import itertools
 
 def tp(*args):
 	# Trailoff print
@@ -105,3 +107,49 @@ class ProgressBar:
 	def done(self, report=None):
 		self.current += 1
 		self._update_bar(report)
+
+def blank(n, d):
+	if n == 1:
+		return [None for _ in range(d)]
+	return [blank(n - 1, d) for i in range(d)]
+
+def expand_list(l):
+	result = []
+	for x in l:
+		if type(x) == list:
+			for y in expand_list(x):
+				result.append(y)
+		else:
+			result.append(x)
+
+def read_scalar(desc):
+	desc = desc + " (scalar)"
+	print(" " * (len(desc)+2), end="\r")
+	print(desc, "[ ", end="")
+	usr = input()
+	print("\033[{}C\033[1A".format(len(usr)+11),end=" ] ")
+	try:
+		r = float(usr)
+		print("Read as number: " + str(r))
+		return r
+	except:
+		try:
+			r = sp.sympify(usr)
+			print("Read as expression: " + str(r))
+			return r
+		except Exception as e:
+			print("Error: " + str(e) + ", please try again.")
+			return read_scalar(desc)
+
+symind = [
+	(0, 0),
+	(0, 1),
+	(0, 2),
+	(0, 3),
+	(1, 1),
+	(1, 2),
+	(1, 3),
+	(2, 2),
+	(2, 3),
+	(3, 3)
+]
