@@ -147,60 +147,13 @@ class DefinablePackage:
 	def __init__(self, *parts):
 		self.parts = parts
 
-class Manifold:
-
-	"""
-	Defines a manifold on which other things can be defined.
-	"""
-
-	def __init__(self, metric: MetricTensor) -> None:
-		self.metric_tensor = metric
-		self.definitions = {"metric": self.metric_tensor}
-
-	def define(self, obj: Definable) -> None:
-		if issubclass(obj, Definable):
-			x = obj(self.metric_tensor)
-			self.definitions[x.name] = x
-			if settings.autocompute:
-				self[x.name].compute(self)
-		elif type(obj) == DefinablePackage:
-			for x in obj.parts:
-				self.define(x)
-		else:
-			raise TypeError("Cannot define an object of type \"" + type(obj).__name__ + "\" on a manifold.")
-
-	def _of_by_name(self, name: str) -> Definable:
-		if name not in self.definitions.keys():
-			raise TypeError("No such object of name \"" + name + "\" defined on this spacetime.")
-		return self.definitions[name]
-
-	def _of_by_type(self, t: type) -> Definable:
-		for d in self.definitions:
-			if type(self.definitions[d]) == t:
-				return self.definitions[d]
-		if settings.autodefine:
-			self.define(t(self.metric_tensor))
-			return self._of_by_type(t)
-		raise TypeError("No such object of type \"" + str(t.__name__) + "\" defined on this spacetime.")
-
-	@cache
-	def of(self, identifier: str | type) -> "Definable":
-		if type(identifier) == type: # I hate this line
-			return self._of_by_type(identifier)
-		if type(identifier) == str:
-			return self._of_by_name(identifier)
-		raise SyntaxError("Invalid identifier type.")
-
-	def __getitem__(self, identifier):
-		return self.of(identifier)
-
 class Scalar(Definable):
 
 	"""
 	Describes a scalar.
 	"""
 
-	def __init__(self, metric: MetricTensor, value):
+	def __init__(self, metric: MetricTensor, value=None):
 		self.metric_tensor = metric
 		self.coordinates = self.metric_tensor.coordinates
 		self.value = value
@@ -389,6 +342,14 @@ class Rank1Tensor(Tensor):
 		)
 		return r
 
+	def contra_mag(self):
+		return sqrt(sum(i**2 for i in self.contra()))
+
+	def mag(self): return self.contra_mag()
+
+	def co_mag(self):
+		return sqrt(sum(i**2 for i in self.co()))
+
 class Rank2Tensor(Tensor):
 
 	rank = 2
@@ -502,11 +463,8 @@ class Rank4Tensor(Tensor):
 
 	def _lower_index(self, i, j, k, l):
 		r = sum(
-			self.metric_tensor.contra(i, m) * self.metric_tensor.contra(j, n) * self.metric_tensor.contra(k, o) * self.metric_tensor.contra(l, p) * self.co(m, n, o, p)
+			self.metric_tensor.contra(i, m) * self.mixed(m, j, k, l)
 			for m in range(dim(self))
-			for n in range(dim(self))
-			for o in range(dim(self))
-			for p in range(dim(self))
 		)
 		self.tensor_co[i][j][k][l] = r
 		if self.symmetry == "riemann":
@@ -528,3 +486,83 @@ Vector = Tensor1 = Rank1Tensor
 Tensor2 = Tensor = Rank2Tensor
 Tensor3 = Rank3Tensor
 Tensor4 = Rank4Tensor
+
+class Manifold(Dimensional):
+
+	"""
+	Defines a manifold on which other things can be defined.
+	"""
+	
+	_computed = True
+
+	def __init__(self, metric: MetricTensor) -> None:
+		self.metric_tensor = metric
+		self.coordinates = self.metric_tensor.coordinates
+		self.definitions = {"metric": self.metric_tensor}
+		self.dimension = dim(self.metric_tensor)
+
+	def _a(self, obj: Definable, ac) -> None:
+		if issubclass(obj, Definable):
+			x = obj(self.metric_tensor)
+			self.definitions[x.name] = x
+			if settings.autocompute and ac:
+				self[x.name].compute(self)
+			else:
+				self._computed = False
+		elif type(obj) == DefinablePackage:
+			for x in obj.parts:
+				self.define(x)
+		else:
+			raise TypeError("Cannot define an object of type \"" + type(obj).__name__ + "\" on a manifold.")
+
+	def define(self, obj):
+		self._a(obj, True)
+
+	def consider(self, obj):
+		self._a(obj, False)
+
+	def compute(self):
+		for obj in self.definitions.values():
+			obj.compute()
+		self._computed = True
+
+	def solve(self):
+		if not self._computed:
+			self.compute()
+		for obj in self.definitions.values():
+			obj.solve()
+
+	def _of_by_name(self, name: str) -> Definable:
+		if name not in self.definitions.keys():
+			raise TypeError("No such object of name \"" + name + "\" defined on this spacetime.")
+		return self.definitions[name]
+
+	def _of_by_type(self, t: type) -> Definable:
+		for d in self.definitions:
+			if type(self.definitions[d]) == t:
+				return self.definitions[d]
+		if settings.autodefine:
+			self.define(t(self.metric_tensor))
+			return self._of_by_type(t)
+		raise TypeError("No such object of type \"" + str(t.__name__) + "\" defined on this spacetime.")
+
+	@cache
+	def of(self, identifier: str | type) -> "Definable":
+		if type(identifier) == type: # I hate this line
+			return self._of_by_type(identifier)
+		if type(identifier) == str:
+			return self._of_by_name(identifier)
+		raise SyntaxError("Invalid identifier type.")
+
+	def __getitem__(self, identifier):
+		return self.of(identifier)
+
+	def covariant_derivative(self, x, i: int):
+		if type(x) == Scalar:
+			return diff(self.value, self.coordinates.x(i))
+		if type(x) == Vector:
+			christoffel = self.of("christoffel")
+			return Vector(self.metric_tensor, [diff(x.co(j), self.coordinates.x(i)) + sum(x.co(k) * christoffel.mixed(k, i, j) for k in range(dim(self)))], indexing="co")
+
+	def contravariant_derivative(self, x, i: int):
+		return sum(self.metric_tensor.contra(i, j) * self.covariant_derivative(x, j) for j in range(dim(self)))

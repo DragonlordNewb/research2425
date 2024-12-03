@@ -35,16 +35,18 @@ class RiemannTensor(spacetime.Rank4Tensor):
 
 	def compute(self, st):
 		christoffel = st.of(ChristoffelSymbols)
-		for i in range(4):
-			for j in range(4):
-				for k in range(4):
-					for l in range(4):
-						r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
-						r = r + sum(
-							(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
-							for m in range(4)
-						)
-						self.tensor_mixed[i][j][k][l] = simplify(r) # could be optimized
+		with util.ProgressBar("Computing Riemann tensor", 256) as pb:
+			for i in range(4):
+				for j in range(4):
+					for k in range(4):
+						for l in range(4):
+							r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
+							r = r + sum(
+								(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
+								for m in range(4)
+							)
+							self.tensor_mixed[i][j][k][l] = simplify(r) # could be optimized
+							pb.done()
 
 class KretschmannScalar(spacetime.Scalar):
 
@@ -98,8 +100,8 @@ class EinsteinTensor(spacetime.Rank2Tensor):
 		Rij = st.of(RicciTensor)
 		R = st.of(RicciScalar)
 		for i, j in util.symind:
-			self.tensor_co[i][j] = self.tensor_co[j][i] = Rij.co(i, j) + (R * metric.co(i, j))/2
-			self.tensor_contra[i][j] = self.tensor_contra[j][i] = Rij.contra(i, j) + (R * metric.contra(i, j))/2
+			self.tensor_co[i][j] = self.tensor_co[j][i] = Rij.co(i, j) + (R() * metric.co(i, j))/2
+			self.tensor_contra[i][j] = self.tensor_contra[j][i] = Rij.contra(i, j) + (R() * metric.contra(i, j))/2
 
 class StressEnergyMomentumTensor(spacetime.Rank2Tensor):
 
