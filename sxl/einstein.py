@@ -40,8 +40,7 @@ class RiemannTensor(spacetime.Rank4Tensor):
 				for j in range(4):
 					for k in range(4):
 						for l in range(4):
-							r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
-							r = r + sum(
+							r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j) + sum(
 								(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
 								for m in range(4)
 							)
