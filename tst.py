@@ -21,3 +21,12 @@ manifold.define(RiemannTensor)
 manifold.define(RicciTensor)
 manifold.define(RicciScalar)
 manifold.define(EinsteinTensor)
+rie = manifold.of(RiemannTensor)
+for i in range(4):
+	for j in range(4):
+		for k in range(4):
+			for l in range(4):
+				if rie.mixed(i, j, k, l) != 0:
+					print(i, j, k, l)
+					pprint(rie.mixed(i, j, k, l))
+					print("\n\n\n\n\n")
