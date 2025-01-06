@@ -79,9 +79,8 @@ class Coordinates(Dimensional):
 	"""
 
 	def __init__(self, *coordinates):
-		if len(coordinates) not in (1, 4):
-			raise SyntaxError("Coordinates must be provided four coordinate symbols somehow.")
 		if len(coordinates) == 1:
+			# I assume we're talking about at least 1+1D
 			self.coordinate_symbols = symbols(coordinates[0])
 		else:
 			self.coordinate_symbols = list(map(Symbol, coordinates))
@@ -109,6 +108,9 @@ class MetricTensor(Dimensional):
 	
 	def __dim__(self):
 		return self.dimension
+
+	def __repr__(self):
+		return "<MetricTensor with coordinates " + repr(self.coordinates) + ">"
 
 	def co(self, mu=None, nu=None) -> Symbol:
 		if mu == nu == None:
@@ -138,6 +140,7 @@ class MetricTensor(Dimensional):
 class Definable(Dimensional):
 
 	name: str = None
+	definable = True
 
 	def compute(self, st: "Spacetime"):
 		raise NotImplementedError("Computation not defined for this object.")
@@ -146,6 +149,9 @@ class DefinablePackage:
 
 	def __init__(self, *parts):
 		self.parts = parts
+
+	def __iter__(self):
+		return iter(self.parts)
 
 class Scalar(Definable):
 
@@ -337,8 +343,8 @@ class Rank1Tensor(Tensor):
 	def norm(self):
 		r = sum(
 			self.metric_tensor.co(i, j) * self.contra(i) * self.contra(j)
-			for i in range(4)
-			for j in range(4)
+			for i in range(dim(self))
+			for j in range(dim(self))
 		)
 		return r
 
@@ -502,7 +508,7 @@ class Manifold(Dimensional):
 		self.dimension = dim(self.metric_tensor)
 
 	def _a(self, obj: Definable, ac) -> None:
-		if issubclass(obj, Definable):
+		if hasattr(obj, "definable"):
 			x = obj(self.metric_tensor)
 			self.definitions[x.name] = x
 			if settings.autocompute and ac:

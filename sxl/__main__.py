@@ -1,5 +1,5 @@
-from sxl import *
+print("Loading SXL CLI ...")
 
-print("Spacetime Exploration Library.")
+from sxl.cli import loop
 
-util.read_scalar("Scalar: ")
+loop()

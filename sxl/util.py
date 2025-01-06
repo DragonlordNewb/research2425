@@ -5,6 +5,8 @@ import time
 import functools
 import itertools
 
+version = "1.0"
+
 def tp(*args):
 	# Trailoff print
 	print(*args, end="")
@@ -68,6 +70,18 @@ def repr_time(dt):
 		return str(round(dt, 1)) + " s"
 	elif dt < 3600:
 		return str(int(dt // 60)) + " m " + str(round(dt % 60, 1)) + " s"
+
+class Loader:
+
+	def __init__(self, desc: str):
+		self.desc = desc
+	
+	def __enter__(self):
+		print(self.desc, end="")
+		sys.stdout.flush()
+	
+	def __exit__(self, _, __, ___):
+		print("done.")
 
 class ProgressBar:
 
@@ -141,15 +155,7 @@ def read_scalar(desc):
 			print("Error: " + str(e) + ", please try again.")
 			return read_scalar(desc)
 
-symind = [
-	(0, 0),
-	(0, 1),
-	(0, 2),
-	(0, 3),
-	(1, 1),
-	(1, 2),
-	(1, 3),
-	(2, 2),
-	(2, 3),
-	(3, 3)
-]
+def symind(n: int) -> list[tuple[int]]:
+	for i in range(n):
+		for j in range(i, n):
+			yield (i, j)
