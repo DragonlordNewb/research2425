@@ -101,6 +101,7 @@ class MetricTensor(Dimensional):
 	"""
 
 	def __init__(self, m: list[list[Symbol]], coordinates: Coordinates) -> None:
+		print(m)
 		self.coordinates = coordinates
 		self.metric_tensor_dd = m
 		self.metric_tensor_uu = Matrix(m).inv().tolist()
