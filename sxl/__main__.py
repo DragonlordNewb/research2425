@@ -1,5 +1,8 @@
 print("Loading SXL CLI ...")
 
-from sxl.cli import loop
+from sxl.cli import SXL
 
-loop()
+sxl = SXL()
+
+if __name__ == "__main__":
+	sxl.loop()

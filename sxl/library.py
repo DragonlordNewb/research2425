@@ -1,7 +1,7 @@
 from sxl import spacetime
 from sxl import einstein
 from sxl import geodesics
-from sympy import symbols, sin
+from sympy import symbols, sin, Function
 
 class Library:
 
@@ -64,6 +64,8 @@ titems = {
 
 c, G, M, r, th = symbols("c G M r theta")
 schwarzschild = 1 + (2 * G * M / (r * c**2))
+fr = Function("f")(r)
+gr = Function("g")(r)
 
 # === Coordinates === $
 
@@ -88,6 +90,8 @@ def tro_coords():
 	return spacetime.Coordinates("t r Omega")
 
 # === Metrics === #
+
+# Minkowski
 
 @Library.register("rectangular Minkowski metric", ["3+1D", "4D", "metric", "flat", "vacuum"])
 def rectangular_minkowski():
@@ -117,10 +121,19 @@ def spherical_minkowski():
 	], trtp_coords())
 
 @Library.register("Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
-def spherical_minkowski():
+def schwarzschild():
 	return spacetime.MetricTensor([
 		[schwarzschild * c**2, 0, 0, 0],
 		[0, -1/schwarzschild, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
+@library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric"])
+def spherically_symmetric():
+	return spacetime.MetricTensor([
+		[fr, 0, 0, 0],
+		[0, -1/gr, 0, 0],
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())

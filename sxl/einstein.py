@@ -25,7 +25,7 @@ class ChristoffelSymbols(spacetime.Rank3Tensor):
 		with util.ProgressBar("Computing Christoffel symbols", (dim(self)**2 * (dim(self)+1)) / 2) as pb:
 			for i in range(dim(self)):
 				for j, k in util.symind(dim(self)):
-					self.tensor_co[i][j][k] = self.tensor_co[i][k][j] = (metric.co_diff(k, i, j) + metric.co_diff(j, i, k) - metric.co_diff(i, k, j)) / 2
+					self.tensor_co[i][j][k] = self.tensor_co[i][k][j] = simplify(metric.co_diff(k, i, j) + metric.co_diff(j, i, k) - metric.co_diff(i, k, j)) / 2
 					pb.done()
 
 class RiemannTensor(spacetime.Rank4Tensor):
@@ -60,7 +60,7 @@ class KretschmannScalar(spacetime.Scalar):
 			for k in range(4)
 			for l in range(4)
 		)
-		self.value = r
+		self.value = simplify(r)
 
 class RicciTensor(spacetime.Rank2Tensor):
 
@@ -84,11 +84,7 @@ class RicciScalar(spacetime.Scalar):
 	def compute(self, st):
 		ricci = st.of(RicciTensor)
 		metric = st.of("metric")
-		r = sum(
-			metric.contra(i, j) * ricci.co(i, j)
-			for i in range(dim(self))
-			for j in range(dim(self))
-		)
+		r = ricci.trace()
 		self.value = r
 
 class EinsteinTensor(spacetime.Rank2Tensor):
@@ -101,8 +97,8 @@ class EinsteinTensor(spacetime.Rank2Tensor):
 		R = st.of(RicciScalar)
 		with util.ProgressBar("Computing Einstein tensor", (dim(self) * (dim(self)+1))/2) as pb:
 			for i, j in util.symind(dim(self)):
-				self.tensor_co[i][j] = self.tensor_co[j][i] = Rij.co(i, j) + (R() * metric.co(i, j))/2
-				self.tensor_contra[i][j] = self.tensor_contra[j][i] = Rij.contra(i, j) + (R() * metric.contra(i, j))/2
+				self.tensor_co[i][j] = self.tensor_co[j][i] = simplify(Rij.co(i, j) + (R() * metric.co(i, j))/2)
+				self.tensor_contra[i][j] = self.tensor_contra[j][i] = simplify(Rij.contra(i, j) + (R() * metric.contra(i, j))/2)
 				pb.done()
 
 class StressEnergyMomentumTensor(spacetime.Rank2Tensor):

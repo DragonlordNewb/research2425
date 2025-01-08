@@ -1,17 +1,19 @@
 from sxl.spacetime import *
 from sxl.einstein import *
 from sympy import *
+import sympy
 
-coords = Coordinates("t r theta phi")
-t, r, th, ph = coords.coordinate_symbols
+coords = Coordinates("t r z")
+t, r, z = coords.coordinate_symbols
 c, G, M = symbols("c G M")
-schwarzschild = 1 - (2 * G * M)/(r * c**2)
-alpha = Function("alpha")(t, r)
+a1, b1, a2, b2 = symbols("a1 b1 a2 b2")
+sch = 1 - (2*G*M)/(r * c**2)
+alpha = Function("alpha")(r)
+chi = Function("chi")(r)
 metric = MetricTensor([
-	[schwarzschild, 0, 0, 0],
-	[0, -1/schwarzschild, 0, 0],
-	[0, 0, -r**2, 0],
-	[0, 0, 0, -r**2 * sin(th)**2]
+	[alpha, 0, 0],
+	[0, -1/alpha, 0],
+	[0, 0, -r**2],
 ], coords)
 
 manifold = Manifold(metric)
@@ -22,8 +24,15 @@ manifold.define(RicciTensor)
 manifold.define(RicciScalar)
 manifold.define(EinsteinTensor)
 
-for x in manifold.of(EinsteinTensor).tensor_contra:
-	pprint(x)
+ein = manifold.of(EinsteinTensor)
+
+print("\n" * 4)
+for i in range(4):
+	sympy.pprint(ein.contra(i, i))
+	input()
+	print("\n" * 4)
+
+# sympy.pprint(ein.contra(0, 0)*metric.co(0, 0) + ein.contra(1, 1)*metric.co(1, 1) + ein.contra(2, 2)*metric.co(2, 2))
 
 # for i in range(4):
 # 	for j in range(4):

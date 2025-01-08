@@ -89,10 +89,20 @@ class Coordinates(Dimensional):
 
 	def __repr__(self):
 		return "<{}D coordinate system: {}>".format(dim(self), ", ".join(map(lambda x: x.name, self.coordinate_symbols)))
+
+	def __iter__(self):
+		return iter(self.coordinate_symbols)
 	
 	@cache
 	def x(self, index: int) -> Symbol:
 		return self.coordinate_symbols[index]
+
+	@cache
+	def inverse(self, name: Symbol | str) -> int:
+		for i, s in enumerate(self):
+			if s.name == name:
+				return i
+		return -1
 
 class MetricTensor(Dimensional):
 
@@ -166,7 +176,7 @@ class Scalar(Definable):
 		self.value = value
 		self.dimension = 0
 
-	def __call__(self):
+	def __call__(self, metric: MetricTensor=None): # TODO: clean that up!! Not sure why but something is passing a positional arg to this elsewhere...
 		return self.value
 
 	def compute(self):
@@ -362,6 +372,8 @@ class Rank2Tensor(Tensor):
 	rank = 2
 	symmetry: str = None
 
+	trace_wrt_metric: Symbol = None
+
 	def _extract(self, ls, i, j):
 		return ls[i][j]
 
@@ -399,6 +411,15 @@ class Rank2Tensor(Tensor):
 		if self.symmetry == "antisymmetric":
 			self.tensor_contra[j][i] = -r
 		return r
+
+	def trace(self):
+		if self.trace_wrt_metric == None:
+			self.trace_wrt_metric = sum(
+				self.metric_tensor.contra(i, j) * self.co(i, j)
+				for i in range(dim(self))
+				for j in range(dim(self))
+			)
+		return self.trace_wrt_metric
 
 class Rank3Tensor(Tensor):
 
