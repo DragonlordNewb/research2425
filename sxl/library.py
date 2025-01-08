@@ -140,7 +140,7 @@ def spherically_symmetric():
 
 # === Geometrical objects === #
 
-@Library.register("Christoffel symbols", ["geometric", "rank-3", "tensor", "connection", "coefficients", "EFEs", "Einstein field equations"])
+@Library.register("Christoffel symbols", ["geometric", "rank-3", "tensor", "connection", "coefficients", "EFEs"])
 def c_symbols():
 	return einstein.ChristoffelSymbols
 
@@ -148,18 +148,18 @@ def c_symbols():
 def rie_tensor():
 	return einstein.RiemannTensor
 
-@Library.register("Ricci tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs", "Einstein field equations"])
+@Library.register("Ricci tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs"])
 def ric_tensor():
 	return einstein.RicciTensor
 
-@Library.register("Ricci scalar", ["geometric", "tensor", "rank-0", "scalar", "EFEs", "Einstein field equations"])
+@Library.register("Ricci scalar", ["geometric", "tensor", "rank-0", "scalar", "EFEs"])
 def ric_scalar():
 	return einstein.RicciTensor
 
-@Library.register("Einstein tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs", "Einstein field equations"])
+@Library.register("Einstein tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs"])
 def ein_tensor():
 	return einstein.EinsteinTensor
 
-@Library.register("everything", ["geometric", "EFEs", "Einstein field equations"])
+@Library.register("everything", ["geometric", "EFEs"])
 def everything():
 	return einstein.EinsteinFieldEquationsParts

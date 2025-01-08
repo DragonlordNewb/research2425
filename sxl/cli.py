@@ -4,6 +4,18 @@ import sys
 import sympy
 import os
 
+class InvalidCommand(Exception):
+	pass
+
+class ScriptExecutionError(Exception):
+	pass
+
+class IncompleteOrInvalidCommand(Exception):
+	pass
+
+class InvalidCommandSyntax(Exception):
+	pass
+
 class SXL:
 
 	term = Terminal()
@@ -11,24 +23,40 @@ class SXL:
 	opts = {x: i for i, x in enumerate(list("123456789abcdefghijklmnopqrstuvwxyz"))}
 	manifold: spacetime.Manifold = None
 
+	def confirm(self, desc: str) -> bool:
+		print(desc, "(y/n)", end="")
+		sys.stdout.flush()
+		with self.term.cbreak(), self.term.hidden_cursor():
+			while True:
+				k = self.term.inkey()
+				if k == "y":
+					print(desc, self.term.lime("(yes)"))
+					return True
+				if k == "n":
+					print(desc, self.term.red("(no) "))
+					return False
+
 	def clarify(self, elements):
 		print("Please clarify:")
 		for i, elements in enumerate(elements[:36]):
-			print("\t{}\t{}".format(list(opts.keys())[i], elements))
+			print("\t{}\t{}".format(list(self.opts.keys())[i], elements))
 		with self.term.cbreak(), self.term.hidden_cursor():
 			print("Press any option key to continue...", end="")
 			sys.stdout.flush()
 			while True:
 				k = self.term.inkey()
-				if opts[k] < len(elements):
+				if self.opts[k] < len(elements):
 					print("\r", " "*34)
-					return opts[k]
+					return self.opts[k]
 				else:
 					print("Invalid option, please try again.         ")
 
-	def parse_command(self, cmd):
+	def parse_command(self, cmd, raise_errors: bool=False):
 
 		cmds = cmd.split(" ")
+
+		if "-q" in cmds or "--quiet" in cmds:
+			util.Configuration.silence = True 
 
 		if cmds[0] == "exit":
 			print("Quitting.")
@@ -36,6 +64,9 @@ class SXL:
 
 		elif cmds[0] == "clear":
 			print(self.term.clear)
+
+		elif cmds[0] == "echo":
+			if "-q" not in cmds and "--quiet" not in cmds: print(*cmds[1:])
 
 		elif cmds[0] == "search":
 			print("Searching library ...", end="")
@@ -53,8 +84,7 @@ class SXL:
 		elif cmds[0] in ("manifold", "mf"):
 
 			if len(cmds) <= 1:
-				print("Incomplete command, need to specify a subcommand. See \"manifold --help\" for more info.")
-				return
+				raise IncompleteOrInvalidCommand("Incomplete command, need to specify a subcommand. See \"manifold --help\" for more info.")
 
 			if cmds[1] in ("help", "-h", "--help"):
 				print(manual.cli.HELP_MANIFOLD)
@@ -62,7 +92,7 @@ class SXL:
 
 			elif cmds[1] in ("create", "c"):
 				if len(cmds) <= 2:
-					print("Incomplete command, need to specify a metric. Try \"manifold create schwarzschild\" or see \"manifold create --help\".")
+					raise IncompleteOrInvalidCommand("Incomplete command, need to specify a metric. Try \"manifold create schwarzschild\" or see \"manifold create --help\".")
 
 				if "-h" in cmds or "--help" in cmds:
 					print(manual.cli.HELP_MANIFOLD_CREATE)
@@ -74,24 +104,23 @@ class SXL:
 					metric = self.lib[results[0]]
 				else:
 					choice = self.clarify(results)
-					print("Clarified the chosen metric:", results[choice])
+					if "-q" not in cmds and "--quiet" not in cmds: print("Clarified the chosen metric:", results[choice])
 					metric = self.lib[results[choice]]
 
-				print("Attempting to create manifold ...")
+				if "-q" not in cmds and "--quiet" not in cmds: print("Attempting to create manifold ...")
 				self.manifold = spacetime.Manifold(metric)
-				print("Successfully created manifold.")
+				if "-q" not in cmds and "--quiet" not in cmds: print("Successfully created manifold.")
 
 			elif cmds[1] in ("define", "d"):
 				if len(cmds) <= 2:
-					print("Incomplete command, need to specify what to define. Try \"manifold define everything\" or see \"manifold define --help\".")
+					raise IncompleteOrInvalidCommand("Incomplete command, need to specify what to define. Try \"manifold define everything\" or see \"manifold define --help\".")
 
 				if "-h" in cmds or "--help" in cmds:
 					print(manual.cli.HELP_MANIFOLD_DEFINE)
 					return
 
 				if self.manifold is None:
-					print("Cannot define anything, manifold is not created yet. Try \"manifold create <metric search terms>\" to make one.")
-					return
+					raise IncompleteOrInvalidCommand("Cannot define anything, manifold is not created yet. Try \"manifold create <metric search terms>\" to make one.")
 
 				results = self.lib.search(*cmds[2:], geometric=True)
 
@@ -102,16 +131,16 @@ class SXL:
 					print("Clarified the chosen object:", results[choice])
 					obj = self.lib[results[choice]]
 
-				print("Attempting to create manifold ...")
+				if "-q" not in cmds and "--quiet" not in cmds: print("Attempting to define object(s) on manifold ...")
 				self.manifold.define(obj)
-				print("Successfully created manifold.")
+				if "-q" not in cmds and "--quiet" not in cmds: print("Done.")
 
 			elif cmds[1] in ("report", "r"):
 				
 				# Check for bad requests/calls for help
 
 				if len(cmds) <= 2:
-					print("Incomplete command, need to specify what to report on. Try \"manifold report metric\" or see \"manifold report --help\".")
+					raise IncompleteOrInvalidCommand("Incomplete command, need to specify what to report on. Try \"manifold report metric\" or see \"manifold report --help\".")
 
 				if "-h" in cmds or "--help" in cmds:
 					print(manual.cli.HELP_MANIFOLD_REPORT)
@@ -131,14 +160,16 @@ class SXL:
 							search_terms.append(x)
 
 					if ioff == -1:
-						print("Malformed command.")
+						raise InvalidCommandSyntax("Malformed command.")
 						return
 
 					for x in cmds[ioff+1:]:
+						if x[0] == "-":
+							break
 						indices.append(x)
 
 					if len(indices) == 0:
-						print("No indices supplied, try adding indices (like 00, 12, 0101) after the -i flag.")
+						raise InvalidCommandSyntax("No indices supplied, try adding indices (like 00, 12, 0101) after the -i flag.")
 						return
 				
 				else:
@@ -154,7 +185,7 @@ class SXL:
 					for i, x in enumerate(indices):
 						inv = self.manifold.of(spacetime.MetricTensor).coordinates.inverse(x)
 						if inv == -1:
-							print("Invalid coordinate name \"{}\"".format(x))
+							raise InvalidCommandSyntax("Invalid coordinate name \"{}\"".format(x))
 							return
 						indices[i] = inv
 
@@ -174,9 +205,9 @@ class SXL:
 				# Check for indexing errors
 
 				if obj.rank > len(indices):
-					print("Too few indices supplied, try adding more after the -i flag.")
+					raise InvalidCommandSyntax("Too few indices supplied, try adding more after the -i flag.")
 				if obj.rank < len(indices):
-					print("Too many indices supplied, try adding fewer after the -i flag.")
+					raise InvalidCommandSyntax("Too many indices supplied, try adding fewer after the -i flag.")
 
 				# Print out the associated value, now that we've got the object and indices
 
@@ -192,13 +223,43 @@ class SXL:
 					sympy.pprint(obj.trace())
 
 			else:
-				print("Incomplete or invalid command. See \"manifold --help\" for more info.")
+				raise IncompleteOrInvalidCommand("Incomplete or invalid command. See \"manifold --help\" for more info.")
 
 		elif cmds[0] in ("runscript", "run"):
-			if os.path.exists(" ".join(cmds[1:]))
+			path = []
+			for x in cmds[1:]:
+				if x[0] == "-":
+					break
+				path.append(x)
+			path = " ".join(path)
+			if os.path.exists(path):
+				with open(path, "r") as f:
+					script = f.read().split("\n")
+				for n, ln in enumerate(script):
+					if ln == "":
+						continue
+
+					if "-q" in cmds or "--quiet" in cmds:
+						lnf = ln + " -q"
+					else:
+						lnf = ln
+
+					try:
+						self.parse_command(lnf.strip())
+					except Exception as e:
+						if "-p" in cmds or "--pess" in cmds or "--pessimist" in cmds:
+							print(self.term.red("Aborting script execution: script error ({}) on line {}: \"{}\"".format(e, n+1, ln)))
+							raise ScriptExecutionError("Script error ({}) on line {}: \"{}\"".format(e, n+1, ln))
+						elif "-o" in cmds or "--opt" in cmds or "--optimist" in cmds:
+							print(self.term.yellow("Warning: script error ({}) on line {}: \"{}\"".format(e, n+1, ln)))
+						else:
+							if self.confirm(self.term.yellow("Warning: script error ({}) on line {}: \"{}\", continue?".format(e, n+1, ln))):
+								raise ScriptExecutionError("Script error ({}) on line {}: \"{}\"".format(e, n+1, ln))
+			else:
+				raise OSError("No such file exists (\"{}\")".format(path))
 
 		else:
-			print("Invalid command.")
+			raise InvalidCommand("Invalid command.")
 
 	def loop(self):
 		print(self.term.home + self.term.clear)
@@ -218,9 +279,21 @@ class SXL:
 
 			try:
 				self.parse_command(cmd)
+			except InvalidCommand as e:
+				print("Invalid command ({}).".format(e.args[0]))
+			except ScriptExecutionError as e:
+				print("Script execution error ({}).".format(e.args[0]))
+			except IncompleteOrInvalidCommand as e:
+				print("Incomplete or invalid command ({}).".format(e.args[0]))
+			except InvalidCommandSyntax as e:
+				print("Invalid command syntax ({}).".format(e.args[0]))
+			except OSError as e:
+				print("OS error ({}).".format(e.args[0]))
 			except KeyboardInterrupt:
 				print("\nStopped (by keyboard interrupt, \"{}\").           ".format(cmd))
 			except Exception as e:
 				raise e
 			finally:
+				if util.Configuration.silence and "-q" in cmd:
+					util.Configuration.silence = False
 				print()

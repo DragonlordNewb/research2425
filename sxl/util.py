@@ -32,6 +32,7 @@ class Configuration:
 	autocompute: bool = False
 	autocorrect: bool = True
 	autoindex: bool = True
+	silence: bool = False
 
 	@staticmethod
 	def set_verbose(value: bool) -> None:
@@ -103,7 +104,7 @@ class ProgressBar:
 		return self
 
 	def __exit__(self, _, __, ___):
-		print()
+		if not Configuration.silence: print()
 
 	def _update_bar(self, report=None):
 		if Configuration.verbose:
@@ -115,7 +116,7 @@ class ProgressBar:
 			if report is not None:
 				report_str = "- " + report + "   "
 			ratio_str = str(self.current) + "/" + str(self.total)
-			tp("	"*self.indent + self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", 
+			if not Configuration.silence: tp("	"*self.indent + self.desc, " "*sep_count + "[" + self.fill*round(fill_count) + " "*space_count + "]", 
 			ratio_str, " "*(8 - len(ratio_str)), "(" + str(round(fill_count*2, 1)) + "%)", repr_time(et - self.st), report_str, "\r")
 		
 	def done(self, report=None):
