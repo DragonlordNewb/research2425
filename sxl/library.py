@@ -121,7 +121,7 @@ def spherical_minkowski():
 	], trtp_coords())
 
 @Library.register("Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
-def schwarzschild():
+def schwarzschild_metric():
 	return spacetime.MetricTensor([
 		[schwarzschild * c**2, 0, 0, 0],
 		[0, -1/schwarzschild, 0, 0],
@@ -129,7 +129,7 @@ def schwarzschild():
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
 
-@library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric"])
+@Library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric"])
 def spherically_symmetric():
 	return spacetime.MetricTensor([
 		[fr, 0, 0, 0],

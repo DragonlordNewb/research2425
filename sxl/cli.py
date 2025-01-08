@@ -2,6 +2,7 @@ from blessed import Terminal
 from sxl import *
 import sys
 import sympy
+import os
 
 class SXL:
 
@@ -10,7 +11,7 @@ class SXL:
 	opts = {x: i for i, x in enumerate(list("123456789abcdefghijklmnopqrstuvwxyz"))}
 	manifold: spacetime.Manifold = None
 
-	def clarify(elements):
+	def clarify(self, elements):
 		print("Please clarify:")
 		for i, elements in enumerate(elements[:36]):
 			print("\t{}\t{}".format(list(opts.keys())[i], elements))
@@ -192,6 +193,9 @@ class SXL:
 
 			else:
 				print("Incomplete or invalid command. See \"manifold --help\" for more info.")
+
+		elif cmds[0] in ("runscript", "run"):
+			if os.path.exists(" ".join(cmds[1:]))
 
 		else:
 			print("Invalid command.")
