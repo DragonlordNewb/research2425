@@ -249,7 +249,7 @@ class Tensor(Definable):
 		
 		r = self._extract(self.tensor_contra, *indices)
 		if r is None:
-			return self._lower_index(*indices)
+			return self._raise_index(*indices)
 		return r
 
 	def contra_diff(self, deriv, *indices):
@@ -392,7 +392,7 @@ class Rank2Tensor(Tensor):
 
 	def _lower_index(self, i, j):
 		r = sum(
-			self.metric_tensor.co(i, k) * self.metric_tensor.co(j, l) * self.co(k, l)
+			self.metric_tensor.co(i, k) * self.metric_tensor.co(j, l) * self.contra(k, l)
 			for k in range(dim(self))
 			for l in range(dim(self))
 		)

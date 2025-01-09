@@ -3,7 +3,12 @@ from sxl import settings
 from sxl import util
 from sympy import simplify
 from sympy import Symbol
+from sympy import pi
 from sxl.spacetime import dim
+
+G, c = Symbol("G"), Symbol("c")
+
+kappa = 8 * pi * G / (c ** 4)
 
 class CosmologicalConstant(spacetime.Scalar):
 
@@ -113,8 +118,22 @@ class StressEnergyMomentumTensor(spacetime.Rank2Tensor):
 			for i, j in util.symind(dim(self)):
 				dd = einstein.co(i, j) + (cosmological() * metric.co(i, j))
 				uu = einstein.contra(i, j) + (cosmological() * metric.contra(i, j))
-				self.tensor_co[i][j] = self.tensor_co[j][i] = dd
-				self.tensor_contra[i][j] = self.tensor_contra[j][i] = uu
+				self.tensor_co[i][j] = self.tensor_co[j][i] = dd / kappa
+				self.tensor_contra[i][j] = self.tensor_contra[j][i] = uu / kappa
+				pb.done()
+
+class ApproximateSEMTensor(spacetime.Rank2Tensor):
+
+	name = "approximate SEM"
+
+	def compute(self, st):
+		einstein = st.of(EinsteinTensor)
+		with util.ProgressBar("Computing SEM tensor with no cosmological constant", 10) as pb:
+			for i, j in util.symind(dim(self)):
+				dd = einstein.co(i, j)
+				uu = einstein.contra(i, j)
+				self.tensor_co[i][j] = self.tensor_co[j][i] = dd / kappa
+				self.tensor_contra[i][j] = self.tensor_contra[j][i] = uu / kappa
 				pb.done()
 
 EinsteinFieldEquationsParts = spacetime.DefinablePackage(
@@ -124,7 +143,8 @@ EinsteinFieldEquationsParts = spacetime.DefinablePackage(
 	RicciTensor,
 	RicciScalar,
 	EinsteinTensor,
-	StressEnergyMomentumTensor
+	StressEnergyMomentumTensor,
+	ApproximateSEMTensor
 )
 
 class SchoutenTensor(spacetime.Rank2Tensor):

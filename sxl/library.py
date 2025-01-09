@@ -62,7 +62,7 @@ titems = {
 
 # ===== DEFAULT CONTENT ===== #
 
-c, G, M, r, th = symbols("c G M r theta")
+t, a, c, G, M, r, th = symbols("t a c G M r theta")
 Mt = Function("M")(Symbol("t"))
 schwarzschild = 1 + (2 * G * M / (r * c**2))
 sch_t = 1 + (2 * G * Mt / (r * c**2))
@@ -140,12 +140,29 @@ def schwarzschild_metric():
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
 
+@Library.register("Linearly-inflating Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
+def lin_inf_sch():
+	return spacetime.MetricTensor([
+		[(1 + (2 * G * t * a / (r * c**2))) * c**2, 0, 0, 0],
+		[0, -1/(1 + (2 * G * a * t / (r * c**2))), 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
 
 @Library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric", "spherical"])
 def spherically_symmetric():
 	return spacetime.MetricTensor([
 		[fr, 0, 0, 0],
 		[0, -1/gr, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
+@Library.register("Schwarzschild-alike metric", ["3+1D", "4D", "metric", "spherical"])
+def spherically_symmetric():
+	return spacetime.MetricTensor([
+		[fr, 0, 0, 0],
+		[0, -1/fr, 0, 0],
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
@@ -189,6 +206,14 @@ def ric_scalar():
 @Library.register("Einstein tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs"])
 def ein_tensor():
 	return einstein.EinsteinTensor
+
+@Library.register("stress-energy-momentum tensor", ["geometric", "sem", "tensor", "rank-2", "symmetric", "EFEs"])
+def sem_tensor():
+	return einstein.StressEnergyMomentumTensor
+
+@Library.register("approximate stress-energy-momentum tensor", ["geometric", "sem", "tensor", "rank-2", "symmetric", "EFEs"])
+def sem_tensor_approx():
+	return einstein.ApproximateSEMTensor
 
 @Library.register("everything", ["geometric", "EFEs"])
 def everything():
