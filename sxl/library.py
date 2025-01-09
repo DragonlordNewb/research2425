@@ -1,7 +1,7 @@
 from sxl import spacetime
 from sxl import einstein
 from sxl import geodesics
-from sympy import symbols, sin, Function
+from sympy import symbols, sin, Function, Symbol
 
 class Library:
 
@@ -63,7 +63,9 @@ titems = {
 # ===== DEFAULT CONTENT ===== #
 
 c, G, M, r, th = symbols("c G M r theta")
+Mt = Function("M")(Symbol("t"))
 schwarzschild = 1 + (2 * G * M / (r * c**2))
+sch_t = 1 + (2 * G * Mt / (r * c**2))
 fr = Function("f")(r)
 gr = Function("g")(r)
 
@@ -128,6 +130,16 @@ def schwarzschild_metric():
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
+
+@Library.register("Time-varying Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
+def schwarzschild_metric():
+	return spacetime.MetricTensor([
+		[sch_t * c**2, 0, 0, 0],
+		[0, -1/sch_t, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
 
 @Library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric", "spherical"])
 def spherically_symmetric():
