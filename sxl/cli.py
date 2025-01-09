@@ -16,6 +16,9 @@ class IncompleteOrInvalidCommand(Exception):
 class InvalidCommandSyntax(Exception):
 	pass
 
+class InvalidArgument(Exception):
+	pass
+
 class SXL:
 
 	term = Terminal()
@@ -202,6 +205,14 @@ class SXL:
 
 				obj = self.manifold.of(obj_type)
 
+				# We can trace some tensors without indices so check for that quick
+
+				if "--trace" in cmds:
+					if not hasattr(obj, "trace"):
+						raise InvalidArgument("Identified object does not have a trace associated with it.")
+					sympy.pprint(obj.trace())
+					return
+
 				# Check for indexing errors
 
 				if obj.rank > len(indices):
@@ -219,8 +230,6 @@ class SXL:
 					sympy.pprint(obj.contra(*indices))
 				if "--mixed" in cmds:
 					sympy.pprint(obj.mixed(*indices))
-				if "--trace" in cmds and obj_type == spacetime.Rank2Tensor:
-					sympy.pprint(obj.trace())
 
 			else:
 				raise IncompleteOrInvalidCommand("Incomplete or invalid command. See \"manifold --help\" for more info.")
@@ -280,15 +289,17 @@ class SXL:
 			try:
 				self.parse_command(cmd)
 			except InvalidCommand as e:
-				print("Invalid command ({}).".format(e.args[0]))
+				print("Invalid command: {}".format(e.args[0]))
 			except ScriptExecutionError as e:
-				print("Script execution error ({}).".format(e.args[0]))
+				print("Script execution error: {}".format(e.args[0]))
 			except IncompleteOrInvalidCommand as e:
-				print("Incomplete or invalid command ({}).".format(e.args[0]))
+				print("Incomplete or invalid command: {}".format(e.args[0]))
 			except InvalidCommandSyntax as e:
-				print("Invalid command syntax ({}).".format(e.args[0]))
+				print("Invalid command syntax: {}".format(e.args[0]))
+			except InvalidArgument as e:
+				print("Invalid argument: {}".format(e.args[0]))
 			except OSError as e:
-				print("OS error ({}).".format(e.args[0]))
+				print("OS error: {}".format(e.args[0]))
 			except KeyboardInterrupt:
 				print("\nStopped (by keyboard interrupt, \"{}\").           ".format(cmd))
 			except Exception as e:

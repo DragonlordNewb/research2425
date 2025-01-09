@@ -129,10 +129,28 @@ def schwarzschild_metric():
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
 
-@Library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric"])
+@Library.register("Spherically-symmetric metric", ["3+1D", "4D", "metric", "spherical"])
 def spherically_symmetric():
 	return spacetime.MetricTensor([
 		[fr, 0, 0, 0],
+		[0, -1/gr, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
+@Library.register("Spherically-symmetric dilation field", ["3+1D", "4D", "metric", "spherical"])
+def spherically_symmetric_dilation():
+	return spacetime.MetricTensor([
+		[fr, 0, 0, 0],
+		[0, -1, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
+@Library.register("Spherically-symmetric contraction field", ["3+1D", "4D", "metric", "spherical"])
+def spherically_symmetric_contraction():
+	return spacetime.MetricTensor([
+		[c**2, 0, 0, 0],
 		[0, -1/gr, 0, 0],
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
