@@ -98,7 +98,7 @@ class Coordinates(Dimensional):
 		return self.coordinate_symbols[index]
 
 	@cache
-	def inverse(self, name: Symbol | str) -> int:
+	def inverse(self, name: Symbol) -> int:
 		for i, s in enumerate(self):
 			if s.name == name:
 				return i
@@ -575,7 +575,7 @@ class Manifold(Dimensional):
 		raise TypeError("No such object of type \"" + str(t.__name__) + "\" defined on this spacetime.")
 
 	@cache
-	def of(self, identifier: str | type) -> "Definable":
+	def of(self, identifier: type) -> "Definable":
 		if type(identifier) == type: # I hate this line
 			return self._of_by_type(identifier)
 		if type(identifier) == str:
