@@ -62,7 +62,7 @@ titems = {
 
 # ===== DEFAULT CONTENT ===== #
 
-t, a, c, G, M, r, th = symbols("t a c G M r theta")
+t, U, a, c, G, M, r, th = symbols("t U a c G M r theta")
 Mt = Function("M")(Symbol("t"))
 schwarzschild = 1 + (2 * G * M / (r * c**2))
 sch_t = 1 + (2 * G * Mt / (r * c**2))
@@ -181,6 +181,24 @@ def spherically_symmetric_contraction():
 	return spacetime.MetricTensor([
 		[c**2, 0, 0, 0],
 		[0, -1/gr, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
+@Library.register("C1 warp bubble", ["warp", "3+1D", "4D", "metric", "spherical"])
+def spherically_symmetric_contraction():
+	return spacetime.MetricTensor([
+		[c**2, 0, 0, 0],
+		[0, -1/((U * c**2 * r**2)/3 + a/r + 1), 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -r**2 * (sin(th)**2)]
+	], trtp_coords())
+
+@Library.register("C2 warp bubble", ["warp", "3+1D", "4D", "metric", "spherical"])
+def spherically_symmetric_contraction():
+	return spacetime.MetricTensor([
+		[c**2, 0, 0, 0],
+		[0, -1/((U * c**2 / r**2) + a/r + 1), 0, 0],
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
