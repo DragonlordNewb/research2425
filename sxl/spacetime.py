@@ -207,6 +207,8 @@ class Tensor(Definable):
 			elif indexing == "mixed":
 				self.tensor_mixed = t
 
+	
+
 	def solve(self):
 		for comb in all_indices(self.rank, self.dimension):
 			self.co(*comb)

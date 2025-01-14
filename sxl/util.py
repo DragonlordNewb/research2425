@@ -160,3 +160,11 @@ def symind(n: int) -> list[tuple[int]]:
 	for i in range(n):
 		for j in range(i, n):
 			yield (i, j)
+
+def allind(n, dimension) -> list[tuple[int]]:
+	if n == 1:
+		return [i for i in range(dimension)]
+	else:
+		for x in allind(n - 1, dimension):
+			for i in range(dimension):
+				yield [*x, i]
