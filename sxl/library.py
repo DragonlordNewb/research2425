@@ -218,7 +218,7 @@ def drive_minkowski():
 		[0, -1 - z**2/(R**2 - z**2), R*z/(R**2 - z**2), 0],
 		[0, R*z/(R**2 - z**2), -R**2/(R**2 - z**2), 0],
 		[0, 0, 0, -(R**2 - z**2)]
-	])
+	], tzRt_coords())
 
 # === Geometrical objects === #
 

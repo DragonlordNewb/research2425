@@ -58,6 +58,27 @@ class SXL:
 
 		cmds = cmd.split(" ")
 
+		ncmds = []
+		for word in cmds:
+			if word == "//":
+				break
+			elif "//" in word:
+				s = ""
+				for i in range(len(word) - 2):
+					if word[i + 2] == "//":
+						break
+					else:
+						s = s + word[i]
+				ncmds.append(s)
+				break
+			else:
+				ncmds.append(word)
+
+		cmds = ncmds
+
+		if len(cmds) == 0:
+			return
+
 		if "-q" in cmds or "--quiet" in cmds:
 			util.Configuration.silence = True 
 
