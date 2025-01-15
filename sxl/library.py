@@ -216,7 +216,7 @@ def drive_minkowski():
 	return spacetime.MetricTensor([
 		[c**2, 0, 0, 0],
 		[0, -1 - z**2/(R**2 - z**2), R*z/(R**2 - z**2), 0],
-		[0, R*z/(R**2 - z**2), -R**2/(R**2 - z**2), 0]
+		[0, R*z/(R**2 - z**2), -R**2/(R**2 - z**2), 0],
 		[0, 0, 0, -(R**2 - z**2)]
 	])
 
