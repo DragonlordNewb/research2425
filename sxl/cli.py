@@ -4,6 +4,8 @@ import sys
 import sympy
 import os
 
+from sxl.spacetime import dim, rank
+
 class InvalidCommand(Exception):
 	pass
 
@@ -194,10 +196,36 @@ class SXL:
 
 					if len(indices) == 0:
 						raise InvalidCommandSyntax("No indices supplied, try adding indices (like 00, 12, 0101) after the -i flag.")
-						return
 				
 				else:
 					search_terms = cmds[2:]
+
+				# Search for the object, clarify if needed
+
+				results = self.lib.search(*search_terms, geometric=True)
+
+				if len(results) == 1:
+					obj_type = self.lib[results[0]]
+				else:
+					choice = self.clarify(results)
+					print("Clarified the chosen object:", results[choice])
+					obj_type = self.lib[results[choice]]
+
+				obj = self.manifold.of(obj_type)
+
+				# Resolve mf r --all/-a
+
+				if "-a" in cmds or "--all" in cmds:
+					for indices in util.allind(obj.rank, dim(obj)):
+						print("Indices:", indices)
+						if "--co" in cmds:
+							sympy.pprint(obj.co(*indices))
+						if "--contra" in cmds:
+							sympy.pprint(obj.contra(*indices))
+						if "--mixed" in cmds:
+							sympy.pprint(obj.mixed(*indices))
+						print("")
+					return
 
 				# Parse the indices
 
@@ -212,19 +240,6 @@ class SXL:
 							raise InvalidCommandSyntax("Invalid coordinate name \"{}\"".format(x))
 							return
 						indices[i] = inv
-
-				# Search for the object, clarify if needed
-
-				results = self.lib.search(*search_terms, geometric=True)
-
-				if len(results) == 1:
-					obj_type = self.lib[results[0]]
-				else:
-					choice = self.clarify(results)
-					print("Clarified the chosen object:", results[choice])
-					obj_type = self.lib[results[choice]]
-
-				obj = self.manifold.of(obj_type)
 
 				# We can trace some tensors without indices so check for that quick
 

@@ -161,10 +161,19 @@ def symind(n: int) -> list[tuple[int]]:
 		for j in range(i, n):
 			yield (i, j)
 
+def dissolve(l):
+	for x in l:
+		if type(x) in (list, tuple):
+			for y in dissolve(x):
+				yield y
+		else:
+			yield x
+
 def allind(n, dimension) -> list[tuple[int]]:
 	if n == 1:
-		return [i for i in range(dimension)]
+		for x in [i for i in range(dimension)]:
+			yield x
 	else:
 		for x in allind(n - 1, dimension):
 			for i in range(dimension):
-				yield [*x, i]
+				yield tuple(dissolve([x, i]))

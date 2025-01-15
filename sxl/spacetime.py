@@ -25,6 +25,9 @@ def dim(d: Dimensional) -> int:
 		raise error.DimensionalError("Dimensionality for this object was set to a non-int (invalid).")
 	return r
 
+def rank(r):
+	return r.rank
+
 def all_indices(rank, dimensions):
 	return product(range(dimensions), repeat=rank)
 
