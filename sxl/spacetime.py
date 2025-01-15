@@ -369,6 +369,14 @@ class Rank1Tensor(Tensor):
 	def co_mag(self):
 		return sqrt(sum(i**2 for i in self.co()))
 
+class Vector3Field(Rank1Tensor):
+
+	def __init__(self, metric: MetricTensor, x, y, z, indexing: str=None):
+		Rank1Tensor.__init__(self, metric, [0, x, y, z], indexing)
+		self.x = x
+		self.y = y 
+		self.z = z
+
 class Rank2Tensor(Tensor):
 
 	rank = 2

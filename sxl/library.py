@@ -1,6 +1,7 @@
 from sxl import spacetime
 from sxl import einstein
 from sxl import geodesics
+from sxl import warp
 from sympy import symbols, sin, Function, Symbol
 
 class Library:
@@ -222,7 +223,7 @@ def drive_minkowski():
 
 # === Geometrical objects === #
 
-@Library.register("Christoffel symbols", ["geometric", "rank-3", "tensor", "connection", "coefficients", "EFEs"])
+@Library.register("Christoffel symbols", ["geometric", "rank-3", "tensor", "connection", "coefficients"])
 def c_symbols():
 	return einstein.ChristoffelSymbols
 
@@ -230,26 +231,26 @@ def c_symbols():
 def rie_tensor():
 	return einstein.RiemannTensor
 
-@Library.register("Ricci tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs"])
+@Library.register("Ricci tensor", ["geometric", "tensor", "rank-2", "symmetric"])
 def ric_tensor():
 	return einstein.RicciTensor
 
-@Library.register("Ricci scalar", ["geometric", "tensor", "rank-0", "scalar", "EFEs"])
+@Library.register("Ricci scalar", ["geometric", "tensor", "rank-0", "scalar"])
 def ric_scalar():
 	return einstein.RicciTensor
 
-@Library.register("Einstein tensor", ["geometric", "tensor", "rank-2", "symmetric", "EFEs"])
+@Library.register("Einstein tensor", ["geometric", "tensor", "rank-2", "symmetric"])
 def ein_tensor():
 	return einstein.EinsteinTensor
 
-@Library.register("stress-energy-momentum tensor", ["geometric", "sem", "tensor", "rank-2", "symmetric", "EFEs"])
+@Library.register("stress-energy-momentum tensor", ["geometric", "sem", "tensor", "rank-2", "symmetric"])
 def sem_tensor():
 	return einstein.StressEnergyMomentumTensor
 
-@Library.register("approximate stress-energy-momentum tensor", ["geometric", "sem", "tensor", "rank-2", "symmetric", "EFEs"])
+@Library.register("approximate stress-energy-momentum tensor", ["geometric", "sem", "tensor", "rank-2", "symmetric"])
 def sem_tensor_approx():
 	return einstein.ApproximateSEMTensor
 
-@Library.register("everything", ["geometric", "EFEs"])
+@Library.register("Einstein field equations", ["geometric", "EFEs"])
 def everything():
 	return einstein.EinsteinFieldEquationsParts
