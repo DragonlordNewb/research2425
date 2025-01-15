@@ -62,7 +62,7 @@ titems = {
 
 # ===== DEFAULT CONTENT ===== #
 
-t, U, a, c, G, M, r, th = symbols("t U a c G M r theta")
+t, U, a, c, G, M, r, th, z, R = symbols("t U a c G M r theta z R")
 Mt = Function("M")(Symbol("t"))
 schwarzschild = 1 + (2 * G * M / (r * c**2))
 sch_t = 1 + (2 * G * Mt / (r * c**2))
@@ -90,6 +90,10 @@ def trz_coords():
 @Library.register("foliated spherical coordinates", ["2+1D", "3D", "foliation", "foliated", "coords"])
 def tro_coords():
 	return spacetime.Coordinates("t r Omega")
+
+@Library.register("drive coordinates", ["3+1D", "4D", "coords", "warp"])
+def tzRt_coords():
+	return spacetime.Coordinates("t z R theta")
 
 # === Metrics === #
 
@@ -122,6 +126,8 @@ def spherical_minkowski():
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
 
+# Schwarzschild
+
 @Library.register("Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
 def schwarzschild_metric():
 	return spacetime.MetricTensor([
@@ -132,7 +138,7 @@ def schwarzschild_metric():
 	], trtp_coords())
 
 @Library.register("Time-varying Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
-def schwarzschild_metric():
+def schwarzschild_metric_tv():
 	return spacetime.MetricTensor([
 		[sch_t * c**2, 0, 0, 0],
 		[0, -1/sch_t, 0, 0],
@@ -159,7 +165,7 @@ def spherically_symmetric():
 	], trtp_coords())
 
 @Library.register("Schwarzschild-alike metric", ["3+1D", "4D", "metric", "spherical"])
-def spherically_symmetric():
+def sch_alike():
 	return spacetime.MetricTensor([
 		[fr, 0, 0, 0],
 		[0, -1/fr, 0, 0],
@@ -186,7 +192,7 @@ def spherically_symmetric_contraction():
 	], trtp_coords())
 
 @Library.register("C1 warp bubble", ["warp", "3+1D", "4D", "metric", "spherical"])
-def spherically_symmetric_contraction():
+def wb_c1():
 	return spacetime.MetricTensor([
 		[c**2, 0, 0, 0],
 		[0, -1/((U * c**2 * r**2)/3 + a/r + 1), 0, 0],
@@ -195,13 +201,24 @@ def spherically_symmetric_contraction():
 	], trtp_coords())
 
 @Library.register("C2 warp bubble", ["warp", "3+1D", "4D", "metric", "spherical"])
-def spherically_symmetric_contraction():
+def wb_c2():
 	return spacetime.MetricTensor([
 		[c**2, 0, 0, 0],
 		[0, -1/((U * c**2 / r**2) + a/r + 1), 0, 0],
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
+
+# Drive coordinates
+
+@Library.register("drive-coordinates Minkowski", ["3+1D", "4D", "metric", "flat", "vacuum", "warp"])
+def drive_minkowski():
+	return spacetime.MetricTensor([
+		[c**2, 0, 0, 0],
+		[0, -1 - z**2/(R**2 - z**2), R*z/(R**2 - z**2), 0],
+		[0, R*z/(R**2 - z**2), -R**2/(R**2 - z**2), 0]
+		[0, 0, 0, -(R**2 - z**2)]
+	])
 
 # === Geometrical objects === #
 
