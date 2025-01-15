@@ -18,6 +18,8 @@ class ShearField(spacetime.Rank1Tensor):
 
 class WarpTensor(spacetime.Rank2Tensor):
 
+    name = "warp tensor"
+
     def __init__(self, metric: spacetime.MetricTensor, d: DilationField=None, s: ShiftField=None, c: ContractionField=None, h: ShearField=None):
         spacetime.Rank2Tensor.__init__(self, metric, [
             [d(), s.co(1), s.co(2), s.co(3)],
@@ -34,7 +36,12 @@ class WarpTensor(spacetime.Rank2Tensor):
     # - constructor that builds from fields
     # - metric tensor builder from background metric
 
-    def construct(self):
-        return MetricTensor([
-            self.metric
-        ])
+class NormalizedWarpTensor(WarpTensor):
+
+    name = "normalized warp tensor"
+
+    def __init__(self, metric, d, s, c, h):
+        WarpTensor.__init__(self, metric, d, s / 2, c, h / 2)
+
+    def apply(self):
+        pass
