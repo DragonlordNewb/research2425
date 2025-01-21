@@ -2,7 +2,12 @@ from sxl import spacetime
 from sxl import einstein
 from sxl import geodesics
 from sxl import warp
-from sympy import symbols, sin, Function, Symbol
+from sxl import util
+from functools import cache
+from sympy import symbols, sin, Function, Symbol, sqrt
+
+class VerificationFailure(Exception):
+	pass
 
 class Library:
 
@@ -32,6 +37,7 @@ class Library:
 
 		return list(dict(sorted(results.items(), key=lambda item: item[1])).keys())[::-1]
 
+	@cache
 	def _get(self, name):
 		for key, _ in self.items:
 			if name == key:
@@ -55,6 +61,19 @@ class Library:
 			return tcls
 		return decorator
 
+	@classmethod
+	def verify(cls):
+		print("Verifying library ...")
+		keys = list(cls.items.keys())
+		with util.ProgressBar("Verifying library", len(keys)) as pb:
+			for key in keys:
+				try:
+					cls.items[key]()
+				except Exception as e:
+					raise VerificationFailure("Library integrity verification failed on {}, error: {}".format(key, e))
+				pb.done()
+		print("Library verification done; all items okay.")
+
 titems = {
 	("a", ("b", "c", "d")): 1,
 	("e", ("f", "b", "c")): 2,
@@ -65,8 +84,10 @@ titems = {
 
 t, U, a, c, G, M, r, th, z, R = symbols("t U a c G M r theta z R")
 Mt = Function("M")(Symbol("t"))
-schwarzschild = 1 + (2 * G * M / (r * c**2))
-sch_t = 1 + (2 * G * Mt / (r * c**2))
+schwarzschild = 1 - (2 * G * M / (r * c**2))
+sch_rz = 1 - (2 * G * M / (sqrt(r**2 + z**2) * c**2))
+sch_t = 1 - (2 * G * Mt / (r * c**2))
+sch_Rz = 1 - (2 * G * M / (sqrt(R**2 - z**2) * c**2))
 fr = Function("f")(r)
 gr = Function("g")(r)
 
@@ -129,14 +150,23 @@ def spherical_minkowski():
 
 # Schwarzschild
 
-@Library.register("Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
-def schwarzschild_metric():
+@Library.register("spherical Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
+def sph_schwarzschild():
 	return spacetime.MetricTensor([
 		[schwarzschild * c**2, 0, 0, 0],
 		[0, -1/schwarzschild, 0, 0],
 		[0, 0, -r**2, 0],
 		[0, 0, 0, -r**2 * (sin(th)**2)]
 	], trtp_coords())
+
+@Library.register("cylindrical Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
+def cyl_schwarzschild():
+	return spacetime.MetricTensor([
+		[sch_rz * c**2, 0, 0, 0],
+		[0, -(r**2 / (r**2 + z**2))/sch_rz, 0, 0],
+		[0, 0, -r**2, 0],
+		[0, 0, 0, -(z**2 / (r**2 + z**2))/sch_rz]
+	], trtz_coords())
 
 @Library.register("Time-varying Schwarzschild metric", ["3+1D", "4D", "metric", "black hole", "vacuum"])
 def schwarzschild_metric_tv():
@@ -212,12 +242,21 @@ def wb_c2():
 
 # Drive coordinates
 
-@Library.register("drive-coordinates Minkowski", ["3+1D", "4D", "metric", "flat", "vacuum", "warp"])
+@Library.register("drive-coordinates Minkowski", ["3+1D", "4D", "metric", "flat", "vacuum", "drive"])
 def drive_minkowski():
 	return spacetime.MetricTensor([
 		[c**2, 0, 0, 0],
 		[0, -1 - z**2/(R**2 - z**2), R*z/(R**2 - z**2), 0],
 		[0, R*z/(R**2 - z**2), -R**2/(R**2 - z**2), 0],
+		[0, 0, 0, -(R**2 - z**2)]
+	], tzRt_coords())
+
+@Library.register("drive-coordinates Schwarzschild", ["3+1D", "4D", "metric", "vacuum", "black hole", "drive"])
+def drive_sch():
+	return spacetime.MetricTensor([
+		[c**2 * sch_Rz, 0, 0, 0],
+		[0, (-1 - z**2/(R**2 - z**2)) / sch_Rz, R*z/(R**2 - z**2) / sch_Rz, 0],
+		[0, R*z/(R**2 - z**2) / sch_Rz, -R**2/(R**2 - z**2) / sch_Rz, 0],
 		[0, 0, 0, -(R**2 - z**2)]
 	], tzRt_coords())
 

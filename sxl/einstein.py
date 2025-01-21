@@ -39,18 +39,50 @@ class RiemannTensor(spacetime.Rank4Tensor):
 
 	def compute(self, st):
 		christoffel = st.of(ChristoffelSymbols)
-		with util.ProgressBar("Computing Riemann tensor", dim(self)**4) as pb:
-			for i in range(dim(self)):
-				for j in range(dim(self)):
-					for k in range(dim(self)):
-						for l in range(dim(self)):
-							r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
-							r = r + sum(
-								(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
-								for m in range(dim(self))
-							)
-							self.tensor_mixed[i][j][k][l] = simplify(r) # could be optimized
-							pb.done()
+
+		if not util.Configuration.shortcut_riemann:
+
+			with util.ProgressBar("Computing Riemann tensor", dim(self)**4) as pb:
+				for i in range(dim(self)):
+					for j in range(dim(self)):
+						for k in range(dim(self)):
+							for l in range(dim(self)):
+								r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
+								r = r + sum(
+									(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
+									for m in range(dim(self))
+								)
+								self.tensor_mixed[i][j][k][l] = simplify(r) # could be optimized
+								pb.done()
+
+		else:
+
+			n = dim(self)
+			with util.ProgressBar("Computing Riemann tensor", (n**4 - (2 * n**3) + (3 * n**2) - 2*n) / 8) as pb:
+				for i, j, k, l in util.riemann_sets(n):
+					r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
+					r = r + sum(
+						(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
+						for m in range(dim(self))
+					)
+					r = simplify(r)
+
+					# Doesn't make use of the algebraic Bianchi identity but
+					# does get all this done much faster than going through 
+					# every single n**4 component manually. The O(f(n)) is still
+					# the same but in practice it's much faster.
+
+					self.tensor_mixed[i][j][k][l] = r
+					self.tensor_mixed[i][j][l][k] = -r
+					self.tensor_mixed[j][i][k][l] = -r
+					self.tensor_mixed[j][i][l][k] = r
+
+					self.tensor_mixed[k][l][i][j] = r
+					self.tensor_mixed[l][k][i][j] = -r
+					self.tensor_mixed[k][l][j][i] = -r
+					self.tensor_mixed[l][k][j][i] = r
+
+					pb.done()
 
 class KretschmannScalar(spacetime.Scalar):
 

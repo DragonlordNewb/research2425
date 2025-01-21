@@ -215,6 +215,9 @@ class SXL:
 
 				# Resolve mf r --all/-a
 
+				if "--co" not in cmds and "--contra" not in cmds and "--mixed" not in cmds:
+					raise InvalidCommandSyntax("Need to specify exactly one index type (none specified).")
+
 				if "-a" in cmds or "--all" in cmds:
 					for indices in util.allind(obj.rank, dim(obj)):
 						print("Indices:", indices)
@@ -307,6 +310,8 @@ class SXL:
 			raise InvalidCommand("Invalid command.")
 
 	def loop(self):
+		print(self.term.home + self.term.clear)
+		self.lib.verify()
 		print(self.term.home + self.term.clear)
 		print("Spacetime Exploration Library v" + str(util.version))
 		print("Type any command to continue. ----\n")

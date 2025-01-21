@@ -33,6 +33,8 @@ class Configuration:
 	autocorrect: bool = True
 	autoindex: bool = True
 	silence: bool = False
+	allow_unit_misname: bool = True
+	shortcut_riemann: bool = True
 
 	@staticmethod
 	def set_verbose(value: bool) -> None:
@@ -161,19 +163,28 @@ def symind(n: int) -> list[tuple[int]]:
 		for j in range(i, n):
 			yield (i, j)
 
-def dissolve(l):
-	for x in l:
-		if type(x) in (list, tuple):
-			for y in dissolve(x):
-				yield y
-		else:
-			yield x
-
-def allind(n, dimension) -> list[tuple[int]]:
-	if n == 1:
-		for x in [i for i in range(dimension)]:
-			yield x
-	else:
-		for x in allind(n - 1, dimension):
-			for i in range(dimension):
-				yield tuple(dissolve([x, i]))
+def riemann_sets(dimension: int):
+	if dimension == 4:
+		return [
+			(0, 1, 0, 1),
+			(0, 1, 0, 2),
+			(0, 1, 0, 3),
+			(0, 1, 1, 2),
+			(0, 1, 1, 3),
+			(0, 1, 2, 3),
+			(0, 2, 0, 2),
+			(0, 2, 0, 3),
+			(0, 2, 1, 2),
+			(0, 2, 1, 3),
+			(0, 2, 2, 3),
+			(0, 3, 0, 3),
+			(0, 3, 1, 2),
+			(0, 3, 1, 3),
+			(0, 3, 2, 3),
+			(1, 2, 1, 2),
+			(1, 2, 1, 3),
+			(1, 2, 2, 3),
+			(1, 3, 1, 3),
+			(1, 3, 2, 3),
+			(2, 3, 2, 3)
+		]
