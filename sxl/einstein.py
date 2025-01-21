@@ -84,6 +84,17 @@ class RiemannTensor(spacetime.Rank4Tensor):
 
 					pb.done()
 
+			util.tp("Correcting identically-vanishing Riemann tensor components ...")
+
+			for i in range(dim(self)):
+				for j in range(dim(self)):
+					for k in range(dim(self)):
+						for l in range(dim(self)):
+							if self.tensor_mixed[i][j][k][l] is None:
+								self.tensor_mixed[i][j][k][l] = 0
+
+			print("Identically-vanishing Riemann tensor components set to zero successfully.")
+
 class KretschmannScalar(spacetime.Scalar):
 
 	name = "kretschmann"

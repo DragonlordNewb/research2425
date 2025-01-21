@@ -9,7 +9,7 @@ version = "1.0"
 
 def tp(*args):
 	# Trailoff print
-	print(*args, end="")
+	print(*args, end="\r")
 	sys.stdout.flush()
 
 PURPLE = '\033[95m'
@@ -34,7 +34,7 @@ class Configuration:
 	autoindex: bool = True
 	silence: bool = False
 	allow_unit_misname: bool = True
-	shortcut_riemann: bool = True
+	shortcut_riemann: bool = False
 
 	@staticmethod
 	def set_verbose(value: bool) -> None:
@@ -162,6 +162,16 @@ def symind(n: int) -> list[tuple[int]]:
 	for i in range(n):
 		for j in range(i, n):
 			yield (i, j)
+
+def allind(n, d):
+	if n == 1:
+		return list(range(d))
+	else:
+		r = []
+		for i in range(d):
+			for js in allind(n - 1, d):
+				r.append(i, *js)
+		return r
 
 def riemann_sets(dimension: int):
 	if dimension == 4:
