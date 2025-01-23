@@ -60,9 +60,9 @@ class RiemannTensor(spacetime.Rank4Tensor):
 			n = dim(self)
 			with util.ProgressBar("Computing Riemann tensor", (n**4 - (2 * n**3) + (3 * n**2) - 2*n) / 8) as pb:
 				for i, j, k, l in util.riemann_sets(n):
-					r = christoffel.mixed_diff(k, i, l, j) - christoffel.mixed_diff(l, i, k, j)
+					r = christoffel.co_diff(k, i, l, j) - christoffel.co_diff(l, i, k, j)
 					r = r + sum(
-						(christoffel.mixed(i, k, m) * christoffel.mixed(m, l, j)) - (christoffel.mixed(i, l, m) * christoffel.mixed(m, k, j))
+						(christoffel.co(i, k, m) * christoffel.co(m, l, j)) - (christoffel.co(i, l, m) * christoffel.co(m, k, j))
 						for m in range(dim(self))
 					)
 					r = simplify(r)
@@ -72,15 +72,15 @@ class RiemannTensor(spacetime.Rank4Tensor):
 					# every single n**4 component manually. The O(f(n)) is still
 					# the same but in practice it's much faster.
 
-					self.tensor_mixed[i][j][k][l] = r
-					self.tensor_mixed[i][j][l][k] = -r
-					self.tensor_mixed[j][i][k][l] = -r
-					self.tensor_mixed[j][i][l][k] = r
+					self.tensor_co[i][j][k][l] = r
+					self.tensor_co[i][j][l][k] = -r
+					self.tensor_co[j][i][k][l] = -r
+					self.tensor_co[j][i][l][k] = r
 
-					self.tensor_mixed[k][l][i][j] = r
-					self.tensor_mixed[l][k][i][j] = -r
-					self.tensor_mixed[k][l][j][i] = -r
-					self.tensor_mixed[l][k][j][i] = r
+					self.tensor_co[k][l][i][j] = r
+					self.tensor_co[l][k][i][j] = -r
+					self.tensor_co[k][l][j][i] = -r
+					self.tensor_co[l][k][j][i] = r
 
 					pb.done()
 

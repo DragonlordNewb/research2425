@@ -310,9 +310,10 @@ class SXL:
 			raise InvalidCommand("Invalid command.")
 
 	def loop(self):
-		print(self.term.home + self.term.clear)
-		self.lib.verify()
-		print(self.term.home + self.term.clear)
+		if "-v" in sys.argv:
+			print(self.term.home + self.term.clear)
+			self.lib.verify()
+			print(self.term.home + self.term.clear)
 		print("Spacetime Exploration Library v" + str(util.version))
 		print("Type any command to continue. ----\n")
 		while True:

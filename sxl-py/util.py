@@ -165,12 +165,12 @@ def symind(n: int) -> list[tuple[int]]:
 
 def allind(n, d):
 	if n == 1:
-		return list(range(d))
+		return [[x] for x in range(d)]
 	else:
 		r = []
 		for i in range(d):
 			for js in allind(n - 1, d):
-				r.append(i, *js)
+				r.append((i, *js))
 		return r
 
 def riemann_sets(dimension: int):
