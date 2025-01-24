@@ -1,7 +1,8 @@
 #include <iostream>
 #include <ginac/ginac.h>
-#include "util.cpp"
+#include "util.h"
 
 using namespace std;
 using Expression = GiNaC::ex;
-using Matrix = GiNaC::matrix
+using Symbol = GiNaC::symbol;
+using Matrix = GiNaC::matrix;

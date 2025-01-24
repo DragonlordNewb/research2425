@@ -6,6 +6,8 @@
 #include <vector>
 #include <sstream>
 
+using namespace std;
+
 namespace data {
 
 	template <typename T>
@@ -80,6 +82,9 @@ namespace data {
 
 			explicit RecursiveArray() {}
 			explicit RecursiveArray(int _rank, int _dimension=4) {
+				if (_rank <= 0) {
+					throw runtime_error("(SXL error code 4) Invalid RA rank.");
+				}
 				rank = _rank;
 				dimension = _dimension;
 				if (rank == 1) {
@@ -98,6 +103,7 @@ namespace data {
 					if (index < 0 or index >= dimension) { 
 						throw std::runtime_error("(SXL error code 1) Extradimensional index."); 
 					}
+					return values[index];
 				}
 
 				RecursiveArray<T>* ptr = nullptr;
@@ -116,6 +122,45 @@ namespace data {
 					// If we're at the bottom, return the value
 					if (ptr->rank == 1) {
 						return ptr->values[index];
+					}
+
+					// Go another layer down
+					ptr = &(ptr->subarrays[index]);
+				}
+
+				// If we get here, there weren't enough
+				// indices supplies to get to rank 1 so
+				// throw an error
+				throw std::runtime_error("(SXL error code 2) Insufficient indices passed.");
+			}
+
+			void set(std::initializer_list<int> indices, T value) {
+				if (rank == 1) {
+					int index = *indices.begin();
+					if (index < 0 or index >= dimension) { 
+						throw std::runtime_error("(SXL error code 1) Extradimensional index."); 
+					}
+					values[index] = value;
+					return;
+				}
+
+				RecursiveArray<T>* ptr = nullptr;
+				for (const auto& index: indices) {
+					// Check for bad indices
+					if (index < 0 or index >= dimension) { 
+						throw std::runtime_error("(SXL error code 1) Extradimensional index."); 
+					}
+
+					// Get into the first subarray, if necessary
+					if (ptr == nullptr) {
+						ptr = &(subarrays[index]);
+						continue;
+					}
+
+					// If we're at the bottom, return the value
+					if (ptr->rank == 1) {
+						ptr->values[index] = value;
+						return;
 					}
 
 					// Go another layer down
