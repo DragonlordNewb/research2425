@@ -375,6 +375,10 @@ namespace geometry {
 
 	using Vector = Rank1Tensor;
 
+	// === MANIFOLDS AND DEFINITIONS === //
+
+	
+
 	class Manifold: public Dimensional {
 
 		private:
