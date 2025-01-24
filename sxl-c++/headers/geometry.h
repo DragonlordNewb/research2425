@@ -33,18 +33,36 @@ namespace geometry {
 		private:
 
 			data::RecursiveArray<Expression> covariantTensor;
+			data::RecursiveArray<bool> covariantTensorComputed;
 			data::RecursiveArray<Expression> contravariantTensor;
+			data::RecursiveArray<bool> contravariantTensorComputed;
 			data::RecursiveArray<Expression> mixedTensor;
+			data::RecursiveArray<bool> mixedTensorComputed;
 
 		public:
 
-			Tensor() {}
+			Tensor() {
+				covariantTensorComputed.setAll(false);
+				contravariantTensorComputed.setAll(false);
+				mixedTensorComputed.setAll(false);
+			}
 
 			virtual int rank() const rank() = 0;
 			
-			Expression& co(initializer_list<int> indices) { return covariantTensor.get(indices); }
-			Expression& contra(initializer_list<int> indices) { return contravariantTensor.get(indices); }
-			Expression& mixed(initializer_list<int> indices) { return mixedTensor.get(indices); }
+			Expression& co(initializer_list<int> indices) { 
+				if (not covariantTensorComputed.get(indices)) {
+					
+				}
+				return covariantTensor.get(indices); 
+			}
+
+			Expression& contra(initializer_list<int> indices) { 
+				return contravariantTensor.get(indices); 
+			}
+
+			Expression& mixed(initializer_list<int> indices) { 
+				return mixedTensor.get(indices); 
+			}
 
 	};
 

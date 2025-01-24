@@ -128,6 +128,18 @@ namespace data {
 				throw std::runtime_error("(SXL error code 2) Insufficient indices passed.");
 			}
 
+			void setAll(T value) {
+				if (rank == 1) {
+					for (int i = 0; i < dimension; i++) {
+						get({i}) = value;
+					}
+				} else {
+					for (int i = 0; i < dimension; i++) {
+						subarrays[i].setAll(value);
+					}
+				}
+			}
+
 	};
 
 	template <typename T>
