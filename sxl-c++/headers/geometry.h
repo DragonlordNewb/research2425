@@ -377,8 +377,6 @@ namespace geometry {
 
 	// === MANIFOLDS AND DEFINITIONS === //
 
-	
-
 	class Manifold: public Dimensional {
 
 		private:

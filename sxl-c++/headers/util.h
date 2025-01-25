@@ -617,6 +617,15 @@ namespace data {
 			List<DatabaseEntry> entries;
 			int dbidl;
 
+			int index(DatabaseID id) {
+				for (int i = 0; i < entries.getLength(); i++) {
+					if (entries.get(i).getID() == id) {
+						return i;
+					}
+				}
+				return -1;
+			}
+
 		public:
 
 			Database(int dbidl=8): dbidl(dbidl) {}
