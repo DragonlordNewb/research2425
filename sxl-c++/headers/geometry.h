@@ -2,6 +2,8 @@
 
 namespace geometry {
 
+	string NO_NAME = "__NO_NAME__"; // to make sure nobody accidentally uses it
+
 	class Dimensional {
 
 		protected:
@@ -75,6 +77,8 @@ namespace geometry {
 
 	};
 
+	class Manifold;
+
 	class Tensor: public Dimensional {
 
 		protected:
@@ -87,9 +91,6 @@ namespace geometry {
 			data::RecursiveArray<bool> mixedTensorComputed;
 
 			MetricTensor metric;
-			virtual Expression computeCovariant(initializer_list<int> indices) = 0;
-			virtual Expression computeContravariant(initializer_list<int> indices) = 0;
-			virtual Expression computeMixed(initializer_list<int> indices) = 0;
 			int _rank;
 
 		public:
@@ -138,9 +139,26 @@ namespace geometry {
 				return mixedTensor.get(indices); 
 			}
 
+			virtual Expression computeCovariant(initializer_list<int> indices) {}
+			virtual Expression computeContravariant(initializer_list<int> indices) {}
+			virtual Expression computeMixed(initializer_list<int> indices) {}
+
 			void set_co(initializer_list<int> indices, Expression value) { covariantTensor.set(indices, value); covariantTensorComputed.set(indices, true); }
 			void set_contra(initializer_list<int> indices, Expression value) { contravariantTensor.set(indices, value); contravariantTensorComputed.set(indices, true); }
 			void set_mixed(initializer_list<int> indices, Expression value) { mixedTensor.set(indices, value); mixedTensorComputed.set(indices, true); }
+
+			bool isBlank() {
+				return covariantTensorComputed.isAll(false) and contravariantTensorComputed.isAll(false) and mixedTensorComputed.isAll(false);
+			}
+
+			bool isUnderdetermined() {
+				return covariantTensorComputed.isNotAll(true) or contravariantTensorComputed.isNotAll(true) or mixedTensorComputed.isNotAll(true);
+			}
+
+			bool isDetermined() { return not isUnderdetermined(); }
+
+			virtual void calculate(Manifold* mf) { throw runtime_error("No calculation method provided."); }
+			virtual string name() { return NO_NAME; }
 
 	};
 
@@ -390,6 +408,31 @@ namespace geometry {
 			Manifold(MetricTensor _metric) {
 				metric = _metric;
 				dimension = metric.dim();
+			}
+
+			int getTensorCount() {
+				return tensors.getLength();
+			}
+
+			Tensor* operator()(string name) {
+				for (int i = 0; i < getTensorCount(); i++) {
+					if (tensors.get(i)->name() == name) {
+						return tensors.get(i);
+					}
+				}
+				return nullptr;
+			}
+
+			void consider(Tensor* tensor) {
+				if (not tensor->isBlank()) {
+					throw runtime_error("Cannot consider a partialy-defined tensor for a Manifold.");
+				}
+				tensors.append(tensor);
+			}
+
+			void define(Tensor* tensor) {
+				consider(tensor);
+				tensors.get(getTensorCount() - 1)->calculate(this);
 			}
 
 	};
