@@ -37,20 +37,22 @@ namespace geometry {
 			}
 
 			Symbol& x(int index) { return coordinates.get(index); }
+			Expression ddx(Expression e, int index) { return e.diff(x(index)); }
 
 	};
 
 	class MetricTensor: public Dimensional {
 
-		private:
+		protected:
 
 			data::RecursiveArray<Expression> covariantTensor;
 			Matrix covariant;
 			data::RecursiveArray<Expression> contravariantTensor;
 			Matrix contravariant;
-			CoordinateSystem coordinates;
 
 		public:
+
+			CoordinateSystem coordinates;
 
 			MetricTensor() {}
 			MetricTensor(initializer_list<initializer_list<Expression>> values, CoordinateSystem _coordinates, int _dimension=4) {
@@ -91,6 +93,7 @@ namespace geometry {
 			data::RecursiveArray<bool> mixedTensorComputed;
 
 			MetricTensor metric;
+			CoordinateSystem coordinates;
 			int _rank;
 
 		public:
@@ -101,6 +104,7 @@ namespace geometry {
 				}
 				_rank = __rank;
 				metric = _metric;
+				coordinates = metric.coordinates;
 				dimension = metric.dim();
 				covariantTensor = data::RecursiveArray<Expression>(rank(), dim());
 				covariantTensorComputed = data::RecursiveArray<bool>(rank(), dim());
@@ -157,7 +161,7 @@ namespace geometry {
 
 			bool isDetermined() { return not isUnderdetermined(); }
 
-			virtual void calculate(Manifold* mf) { throw runtime_error("No calculation method provided."); }
+			virtual void calculate(Manifold* mf) = 0; // { throw runtime_error("No calculation method provided."); }
 			virtual string name() { return NO_NAME; }
 
 	};
@@ -400,9 +404,10 @@ namespace geometry {
 		private:
 
 			data::List<Tensor*> tensors;
-			MetricTensor metric;
 
 		public:
+
+			MetricTensor metric;
 
 			Manifold() {}
 			Manifold(MetricTensor _metric) {
@@ -423,17 +428,43 @@ namespace geometry {
 				return nullptr;
 			}
 
-			void consider(Tensor* tensor) {
-				if (not tensor->isBlank()) {
-					throw runtime_error("Cannot consider a partialy-defined tensor for a Manifold.");
-				}
-				tensors.append(tensor);
+			template <typename T>
+			void define() {
+				T tensor(metric);
+				tensor.calculate(this);
+				tensors.append(&tensor);
 			}
 
-			void define(Tensor* tensor) {
-				consider(tensor);
-				tensors.get(getTensorCount() - 1)->calculate(this);
+	};
+
+};
+
+namespace tensors {
+
+	class ConnectionCoefficients: public geometry::Rank3Tensor {
+
+		// Already included: metric
+
+		public:
+
+			ConnectionCoefficients(geometry::MetricTensor m): geometry::Rank3Tensor(m) {}
+
+			void calculate(geometry::Manifold* mf) override {
+				// Manifold is not necessary since this
+				// is a metric-only computation
+
+				Expression val;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						for (int k = 0; k < dim(); k++) {
+							val = (coordinates.ddx(metric.co({i, j}), k) + coordinates.ddx(metric.co({i, k}), j) - coordinates.ddx(metric.co({k, j}), i)) / 2;
+							set_co({i, j, k}, val);
+						}
+					}
+				}
 			}
+
+			string name() override { return "connection coefficients"; }
 
 	};
 
