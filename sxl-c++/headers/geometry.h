@@ -164,6 +164,8 @@ namespace geometry {
 			virtual void calculate(Manifold* mf) = 0; // { throw runtime_error("No calculation method provided."); }
 			virtual string name() { return NO_NAME; }
 
+			virtual Expression scalar() = 0;
+
 	};
 
 	class Rank1Tensor: public Tensor {
@@ -209,6 +211,8 @@ namespace geometry {
 			// Expression mixed(int i) { return mixed({i}); }
 
 			// int rank() const override { return 1; }
+
+			Expression scalar() override { throw runtime_error("Can't find the scalar of a rank-1 tensor."); }
 
 	};
 
@@ -263,6 +267,16 @@ namespace geometry {
 			// Expression mixed(int i, int j) { return mixed({i, j}); }
 
 			// int rank() const override { return 2; }
+
+			Expression scalar() override {
+				Expression val = 0; 
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						val += metric.contra({i, j}) * co({i, j});
+					}
+				}
+				return val;
+			}
 
 	};
 
@@ -324,6 +338,8 @@ namespace geometry {
 			// Expression mixed(int i, int j, int k) { return mixed({i, j, k}); }
 
 			// int rank() const override { return 3; }
+
+			Expression scalar() override { throw runtime_error("Can't find the scalar of a rank-3 tensor."); }
 
 	};
 
@@ -393,6 +409,20 @@ namespace geometry {
 
 			// int rank() const override { return 4; }
 
+			Expression scalar() override {
+				Expression val = 0;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						for (int k = 0; k < dim(); k++) {
+							for (int l = 0; l < dim(); l++) {
+								val += co({i, j, k, l}) * contra({i, j, k, l});
+							}
+						}
+					}
+				}
+				return val;
+			}
+
 	};
 
 	using Vector = Rank1Tensor;
@@ -451,17 +481,18 @@ namespace geometry {
 			Expression co(string name, initializer_list<int> indices) { return get(name)->co(indices); }
 			Expression contra(string name, initializer_list<int> indices) { return get(name)->contra(indices); }
 			Expression mixed(string name, initializer_list<int> indices) { return get(name)->mixed(indices); }
+			Expression scalar(string name) { return get(name)->scalar(); }
 
 	};
 
 };
 
-namespace tensors {
+string CCS = "connection coefficients";
+string TORSION = "torsion";
+string RIEMANN = "riemann";
+string RICCI = "ricci";
 
-	string CCS = "connection coefficients";
-	string TORSION = "torsion";
-	string RIEMANN = "riemann";
-	string RICCI = "ricci";
+namespace tensors {
 
 	class ConnectionCoefficients: public geometry::Rank3Tensor {
 
@@ -555,7 +586,7 @@ namespace tensors {
 
 		public:
 
-			RicciTensor(geometry::MetricTensor m): geometry::Rank4Tensor(m) {}
+			RicciTensor(geometry::MetricTensor m): geometry::Rank2Tensor(m) {}
 
 			void calculate(geometry::Manifold* mf) override {
 				// Manifold is not necessary since this
