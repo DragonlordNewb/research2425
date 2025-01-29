@@ -415,11 +415,17 @@ namespace geometry {
 				dimension = metric.dim();
 			}
 
+			~Manifold() {
+				for (int i = 0; i < getTensorCount(); i++) {
+					delete tensors.get(i); // free all pointers
+				}
+			}
+
 			int getTensorCount() {
 				return tensors.getLength();
 			}
 
-			Tensor* operator()(string name) {
+			Tensor* get(string name) {
 				for (int i = 0; i < getTensorCount(); i++) {
 					if (tensors.get(i)->name() == name) {
 						return tensors.get(i);
@@ -428,18 +434,34 @@ namespace geometry {
 				return nullptr;
 			}
 
+			Tensor* operator()(string name) {
+				return get(name);
+			}
+
+			void define(Tensor* t) {
+				t->calculate(this);
+				tensors.append(t);
+			}
+
 			template <typename T>
 			void define() {
-				T tensor(metric);
-				tensor.calculate(this);
-				tensors.append(&tensor);
+				define(new T(metric));
 			}
+
+			Expression co(string name, initializer_list<int> indices) { return get(name)->co(indices); }
+			Expression contra(string name, initializer_list<int> indices) { return get(name)->contra(indices); }
+			Expression mixed(string name, initializer_list<int> indices) { return get(name)->mixed(indices); }
 
 	};
 
 };
 
 namespace tensors {
+
+	string CCS = "connection coefficients";
+	string TORSION = "torsion";
+	string RIEMANN = "riemann";
+	string RICCI = "ricci";
 
 	class ConnectionCoefficients: public geometry::Rank3Tensor {
 
@@ -464,7 +486,94 @@ namespace tensors {
 				}
 			}
 
-			string name() override { return "connection coefficients"; }
+			string name() override { return CCS; }
+
+	};
+
+	class TorsionTensor: public geometry::Rank3Tensor {
+
+		// Already included: metric
+
+		public:
+
+			TorsionTensor(geometry::MetricTensor m): geometry::Rank3Tensor(m) {}
+
+			void calculate(geometry::Manifold* mf) override {
+				// Manifold is not necessary since this
+				// is a metric-only computation
+
+				Expression val;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						for (int k = 0; k < dim(); k++) {
+							val = mf->mixed(CCS, {i, j, k}) - mf->mixed(CCS, {i, k, j});
+							set_mixed({i, j, k}, val);
+						}
+					}
+				}
+			}
+
+			string name() override { return TORSION; }
+
+	};
+
+	class RiemannTensor: public geometry::Rank4Tensor {
+
+		public:
+
+			RiemannTensor(geometry::MetricTensor m): geometry::Rank4Tensor(m) {}
+
+			void calculate(geometry::Manifold* mf) override {
+				// Manifold is not necessary since this
+				// is a metric-only computation
+
+				Expression a;
+				Expression b;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						for (int k = 0; k < dim(); k++) {
+							for (int l = 0; l < dim(); l++) {
+								a = coordinates.ddx(mf->mixed(CCS, {i, l, j}), k) - coordinates.ddx(mf->mixed(CCS, {i, k, j}), l);
+
+								b = 0;
+								for (int m = 0; m < dim(); m++) {
+									b = b + (mf->mixed(CCS, {i, k, m}) * mf->mixed(CCS, {m, l, j})) - (mf->mixed(CCS, {i, l, m}) * mf->mixed(CCS, {m, k, j}));
+								}
+								
+								set_mixed({i, j, k, l}, a + b);
+							}
+						}
+					}
+				}
+			}
+
+			string name() override { return RIEMANN; }
+
+	};
+
+	class RicciTensor: public geometry::Rank2Tensor {
+
+		public:
+
+			RicciTensor(geometry::MetricTensor m): geometry::Rank4Tensor(m) {}
+
+			void calculate(geometry::Manifold* mf) override {
+				// Manifold is not necessary since this
+				// is a metric-only computation
+
+				Expression val;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						val = 0;
+						for (int k = 0; k < dim(); k++) {
+							val = val + mf->mixed(RIEMANN, {k, i, k, j});
+						}
+						set_co({i, j}, val);
+					}
+				}
+			}
+
+			string name() override { return RICCI; }
 
 	};
 
