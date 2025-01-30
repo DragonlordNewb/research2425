@@ -1,8 +1,0 @@
-echo Starting up...
-
-manifold create schwarzschild
-manifold define everything
-
-echo Everything defined. Einstein tensor G00 (contra):
-
-manifold report einstein --contra -i 00
