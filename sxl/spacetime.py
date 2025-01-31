@@ -230,12 +230,6 @@ class Tensor(Definable):
 	def _mix_index(self, *indices):
 		raise NotImplementedError("Index mixing not implemented on this Tensor subclass (this is a bad error).")
 
-	def vanishes(self):
-		for indices in util.allind(rank(self), dim(self)):
-			if self.co(*indices) != 0 or self.contra(*indices) != 0 or self.mixed(*indices) != 0:
-				return False
-		return True
-
 	def co(self, *indices):
 		if len(indices) == 0:
 			return self.tensor_co
@@ -521,6 +515,9 @@ class Rank4Tensor(Tensor):
 		return r
 
 	def _mix_index(self, i, j, k, l):
+		if self._extract(self.tensor_co, i, j, k, l) is None:
+			raise error.UnderdeterminationError("Component {} of {} is not definable (with builtin logic).".format((i, j, k, l), self.name))
+
 		r = sum(self.metric_tensor.contra(i, m) * self.co(m, j, k, l) for m in range(dim(self)))
 		self.tensor_mixed[i][j][k][l] = r 
 		if self.symmetry == "riemann":
