@@ -485,6 +485,40 @@ namespace geometry {
 
 	};
 
+	// like, for example, contracting with another tensor
+
+	class TensorOperator {
+
+		public:
+
+			virtual int arity() = 0;
+
+	};
+
+	template <typename InputT, typename OutputT>
+	class UnaryTensorOperator: public TensorOperator {
+
+		public:
+
+			int arity() override { return 1; }
+
+			virtual OutputT calculate(InputT input) = 0;
+			OutputT operator()(InputT input) { return calculate(input); }
+
+	};
+
+	template <typename InputT1, typename InputT2, typename OutputT>
+	class BinaryTensorOperator: public TensorOperator {
+
+		public:
+
+			int arity() override { return 1; }
+
+			virtual OutputT calculate(InputT1 input1, InputT2 input2) = 0;
+			OutputT operator()(InputT1 input1, InputT2 input2) = 0;
+
+	};
+
 };
 
 string CCS = "connection coefficients";
@@ -607,5 +641,9 @@ namespace tensors {
 			string name() override { return RICCI; }
 
 	};
+
+};
+
+namespace operators {
 
 };

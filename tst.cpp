@@ -19,4 +19,5 @@ int main() {
 	mf.define<tensors::RicciTensor>();
 	mf.define<einstein::EinsteinTensor>();
 	mf.define<einstein::StressEnergyMomentumTensor>();
+	mf.define<einstein::LandauLifschitzPseudotensor>();
 }
