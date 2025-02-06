@@ -604,7 +604,6 @@ namespace tensors {
 								for (int m = 0; m < dim(); m++) {
 									b = b + (mf->mixed(CCS, {i, k, m}) * mf->mixed(CCS, {m, l, j})) - (mf->mixed(CCS, {i, l, m}) * mf->mixed(CCS, {m, k, j}));
 								}
-								
 								set_mixed({i, j, k, l}, a + b);
 							}
 						}

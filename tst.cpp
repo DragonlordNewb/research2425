@@ -20,4 +20,14 @@ int main() {
 	mf.define<einstein::EinsteinTensor>();
 	mf.define<einstein::StressEnergyMomentumTensor>();
 	mf.define<einstein::LandauLifschitzPseudotensor>();
+	cout << coords.ddx(pow(coords.x(1), 2), 1);
+	// for (int i = 0; i < 4; i++) {
+	// 	for (int j = 0; j < 4; j++) {
+	// 		for (int k = 0; k < 4; k++) {
+	// 			for (int l = 0; l < 4; l++) {
+	// 				cout << i+1 << j+1 << k+1 << l+1 << " " << mf.mixed(RIEMANN, {i, j, k, l}) << endl;
+	// 			}
+	// 		}
+	// 	}
+	// }
 }

@@ -69,7 +69,7 @@ namespace einstein {
 				Expression val;
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
-						val = 0 // patch this later
+						val = 0; // patch this later
 						set_contra({i, j}, val);
 					}
 				}
