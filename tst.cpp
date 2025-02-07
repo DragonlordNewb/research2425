@@ -2,11 +2,15 @@
 
 int main() {
 	geometry::CoordinateSystem coords = {"t", "r", "theta", "phi"};
+	Symbol M("M");
+	Symbol r = coords.x(1);
+	Symbol th = coords.x(2);
+	// c=G=M=1
 	geometry::MetricTensor metric({
-		{1 - 2/coords.x(1), 0, 0, 0},
-		{0, -1/(1 - 2/coords.x(1)), 0, 0},
-		{0, 0, -pow(coords.x(1), 2), 0},
-		{0, 0, 0, -pow(coords.x(1) * sin(coords.x(2)), 2)}
+		{1 - (2*M/r), 0, 0, 0},
+		{0, -pow(1 - (2*M/r), -1), 0, 0},
+		{0, 0, -pow(r, 2), 0},
+		{0, 0, 0, -pow(r * sin(th), 2)}
 	}, coords);
 	geometry::Manifold mf(metric);
 	// tensors::ConnectionCoefficients ccs(metric);
@@ -20,7 +24,14 @@ int main() {
 	mf.define<einstein::EinsteinTensor>();
 	mf.define<einstein::StressEnergyMomentumTensor>();
 	mf.define<einstein::LandauLifschitzPseudotensor>();
-	cout << coords.ddx(pow(coords.x(1), 2), 1);
+	std::string _;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 4; k++) {
+				cout << i << j << k << " " << mf.mixed(CCS, {i, j, k}) << endl;
+			}
+		}
+	}
 	// for (int i = 0; i < 4; i++) {
 	// 	for (int j = 0; j < 4; j++) {
 	// 		for (int k = 0; k < 4; k++) {

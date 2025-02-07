@@ -314,17 +314,30 @@ namespace geometry {
 				return result;
 			}
 
+			// Expression computeMixed(initializer_list<int> indices) override {
+			// 	int i = *(indices.begin()); // Get the first index
+			// 	int j = indices.begin()[1];
+			// 	int k = indices.begin()[2];
+
+			// 	// T^i_jk = g_{jl} g_{km} T^{ilm}	
+			// 	Expression result = 0;
+			// 	for (int l = 0; l < dim(); l++) {
+			// 		for (int m = 0; m < dim(); m++) {
+			// 			result += metric.co({j, l}) * metric.co({k, m}) * contra({i, l, m});
+			// 		}
+			// 	}
+			// 	return result;
+			// }
+
 			Expression computeMixed(initializer_list<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
 
-				// T^i_jk = g_{jl} g_{km} T^{ilm}	
+				// T^i_jk = g^{il} T_{ljk}
 				Expression result = 0;
 				for (int l = 0; l < dim(); l++) {
-					for (int m = 0; m < dim(); m++) {
-						result += metric.co({j, l}) * metric.co({k, m}) * contra({i, l, m});
-					}
+					result += metric.contra({i, l}) * co({l, j, k});
 				}
 				return result;
 			}
@@ -540,12 +553,33 @@ namespace tensors {
 				// Manifold is not necessary since this
 				// is a metric-only computation
 
-				Expression val;
+				Expression firstKind;
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						for (int k = 0; k < dim(); k++) {
-							val = (coordinates.ddx(metric.co({i, j}), k) + coordinates.ddx(metric.co({i, k}), j) - coordinates.ddx(metric.co({k, j}), i)) / 2;
-							set_co({i, j, k}, val);
+							Expression e1, e2, e3, m1, m2, m3;
+							m1 = metric.co({i, j});
+							m2 = metric.co({i, k});
+							m3 = metric.co({j, k});
+							e1 = coordinates.ddx(m1, k);
+							e2 = coordinates.ddx(m2, j);
+							e3 = coordinates.ddx(m3, i);
+							// cout << "m" << i << j << " [ " << m1 << " ]" << " dd" << coordinates.x(k) << " = " << e1 << endl;;
+							firstKind = (e1 + e2 - e3) / 2;
+							set_co({i, j, k}, firstKind);
+						}
+					}
+				}
+
+				Expression secondKind = 0;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						for (int k = 0; k < dim(); k++) {
+							secondKind = 0;
+							for (int l = 0; l < dim(); l++) {
+								secondKind = secondKind + (metric.contra({i, l}) * co({l, j, k}));
+							}
+							set_contra({i, j, k}, secondKind);
 						}
 					}
 				}
@@ -594,16 +628,30 @@ namespace tensors {
 
 				Expression a;
 				Expression b;
+				Expression e1;
+				Expression e2;
+				Expression e3;
+				Expression e4;
+				Expression e5;
+				Expression e6;
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						for (int k = 0; k < dim(); k++) {
 							for (int l = 0; l < dim(); l++) {
-								a = coordinates.ddx(mf->mixed(CCS, {i, l, j}), k) - coordinates.ddx(mf->mixed(CCS, {i, k, j}), l);
+								e1 = coordinates.ddx(mf->mixed(CCS, {i, l, j}), k);
+								e2 = coordinates.ddx(mf->mixed(CCS, {i, k, j}), l);
+								//cout << i << l << j << " " << e1 << " - " << i << k << j << " " << e2 << endl;
+								a = e1 - e2;
 
 								b = 0;
 								for (int m = 0; m < dim(); m++) {
-									b = b + (mf->mixed(CCS, {i, k, m}) * mf->mixed(CCS, {m, l, j})) - (mf->mixed(CCS, {i, l, m}) * mf->mixed(CCS, {m, k, j}));
+									e3 = mf->mixed(CCS, {i, k, m});
+									e4 = mf->mixed(CCS, {m, l, j});
+									e5 = mf->mixed(CCS, {i, l, m});
+									e6 = mf->mixed(CCS, {m, k, j});
+									b = b + (e3 * e4) - (e5 * e6);
 								}
+
 								set_mixed({i, j, k, l}, a + b);
 							}
 						}
