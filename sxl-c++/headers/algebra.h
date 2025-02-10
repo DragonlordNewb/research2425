@@ -71,7 +71,9 @@ namespace algebra {
             }
 
             // Constructor for unary operations (e.g. transcendental functions)
-            Expression(Expression a)
+            Expression(Expression a, ExpressionType op) {
+
+            }
 
             // Constructor for binary operations
             Expression(Expression a, ExpressionType op, Expression b, double ce=1) {
@@ -105,14 +107,13 @@ namespace algebra {
                     exprt = Constant;
                     if (a.type() == Constant) {
                         if (b.type() == Constant) {
-                            Expression(a.coeff() * b.coeff())
+                            Expression(a.coeff() * b.coeff());
                         } else {
-                            Expression::Expression(*b);
+                            Expression(*b);
                             coefficient *= a.coeff();
                         }
                     } else if (b.type() == Constant) {
-                        Expression::Expression(*a);
-                        coefficient *= b.coeff();
+                        a.coeff() = a.coeff() * b.coeff();
                     } else {
                         // ...otherwise, do a regular Product.
                         exprt = Product;
@@ -152,24 +153,28 @@ namespace algebra {
             Expression operator/(Expression other) { return Expression(*this, Ratio, other); }
 
             ExpressionType type() { return exprt; }
-            double coeff() { return coefficient; }
+            double& coeff() { return coefficient; }
             
             string repr(bool parenthesize=false) {
-                if (type() == Constant) {
-                    return string(coefficient);
+                stringstream ss("");
+
+                if (type() == Diff) {
+                    ss << coefficient << "d" << var;
+                    return ss.str();
                 }
 
                 if (type() == Variable) {
-                    return string(coefficient) + var;
+                    ss << coefficient << var;
+                    return ss.str();
                 }
 
-                if (type() == Differential) {
-                    return string(coefficient) + "d" + var;
+                if (type() == Constant) {
+                    ss << coefficient;
+                    return ss.str();
                 }
 
-                stringstream ss;
                 parenthesize = parenthesize or coefficient != 1;
-                if (coefficient != 1) { ss << string(coefficient); }
+                if (coefficient != 1) { ss << coefficient; }
                 if (parenthesize) { ss << "("; }
 
                 if (type() == Sum) {
