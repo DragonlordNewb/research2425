@@ -24,6 +24,8 @@ namespace formalism {
 
     using ADM = ArnowittDeserMisner;
 
-    class 
+    class WarpFieldFormalism {
+
+    };
 
 };
