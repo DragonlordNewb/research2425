@@ -6,6 +6,8 @@ namespace formalism {
 
         public:
 
+            virtual geometry::MetricTensor makeMetric() = 0;
+
     };
 
     // ===== IMPLEMENTATIONS ===== //
@@ -13,6 +15,17 @@ namespace formalism {
     // === Weak 
 
     class WeakFieldApproximation {
+
+        protected:
+
+            geometry::Rank2Tensor perturbation;
+            geometry::MetricTensor metric;
+
+        public:
+
+            geometry::MetricTensor makeMetric() override {
+                //
+            } 
 
     };
 
