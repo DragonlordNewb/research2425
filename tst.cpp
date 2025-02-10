@@ -30,13 +30,13 @@ int main() {
 	mf.define<einstein::LandauLifschitzPseudotensor>();
 	std::string _;
 	cout << GiNaC::latex;
-	// for (int i = 0; i < 4; i++) {
-	// 	for (int j = 0; j < 4; j++) {
-	// 		for (int k = 0; k < 4; k++) {
-	// 			cout << i << j << k << " " << mf.mixed(CCS, {i, j, k}) << endl;
-	// 		}
-	// 	}
-	// }
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 4; k++) {
+				cout << i << j << k << " " << mf.mixed(CCS, {i, j, k}) << endl;
+			}
+		}
+	}
 	// for (int i = 0; i < 4; i++) {
 	// 	for (int j = 0; j < 4; j++) {
 	// 		for (int k = 0; k < 4; k++) {

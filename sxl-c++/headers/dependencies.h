@@ -7,4 +7,3 @@ using namespace std;
 using Expression = GiNaC::ex;
 using Symbol = GiNaC::symbol;
 using Matrix = GiNaC::matrix;
-using pprint = GiNaC::print_latex;

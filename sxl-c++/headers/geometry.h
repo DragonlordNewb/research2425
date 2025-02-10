@@ -74,8 +74,8 @@ namespace geometry {
 				}
 			}
 
-			Expression co(initializer_list<int> indices) { return covariantTensor.get(indices); }
-			Expression contra(initializer_list<int> indices) { return contravariantTensor.get(indices); }
+			Expression co(vector<int> indices) { return covariantTensor.get(indices); }
+			Expression contra(vector<int> indices) { return contravariantTensor.get(indices); }
 
 	};
 
@@ -119,7 +119,7 @@ namespace geometry {
 
 			int rank() const { return _rank; }
 
-			Expression co(initializer_list<int> indices) {
+			Expression co(vector<int> indices) {
 				if (not covariantTensorComputed.get(indices)) {
 					covariantTensor.set(indices, computeCovariant(indices).normal());
 					covariantTensorComputed.set(indices, true);
@@ -127,7 +127,7 @@ namespace geometry {
 				return covariantTensor.get(indices); 
 			}
 
-			Expression contra(initializer_list<int> indices) { 
+			Expression contra(vector<int> indices) { 
 				if (not contravariantTensorComputed.get(indices)) {
 					contravariantTensor.set(indices, computeContravariant(indices).normal());
 					contravariantTensorComputed.set(indices, true);
@@ -135,7 +135,7 @@ namespace geometry {
 				return contravariantTensor.get(indices); 
 			}
 
-			Expression mixed(initializer_list<int> indices) {
+			Expression mixed(vector<int> indices) {
 				if (not mixedTensorComputed.get(indices)) {
 					mixedTensor.set(indices, computeMixed(indices).normal());
 					mixedTensorComputed.set(indices, true);
@@ -143,13 +143,13 @@ namespace geometry {
 				return mixedTensor.get(indices); 
 			}
 
-			virtual Expression computeCovariant(initializer_list<int> indices) {}
-			virtual Expression computeContravariant(initializer_list<int> indices) {}
-			virtual Expression computeMixed(initializer_list<int> indices) {}
+			virtual Expression computeCovariant(vector<int> indices) {}
+			virtual Expression computeContravariant(vector<int> indices) {}
+			virtual Expression computeMixed(vector<int> indices) {}
 
-			void set_co(initializer_list<int> indices, Expression value) { covariantTensor.set(indices, value); covariantTensorComputed.set(indices, true); }
-			void set_contra(initializer_list<int> indices, Expression value) { contravariantTensor.set(indices, value); contravariantTensorComputed.set(indices, true); }
-			void set_mixed(initializer_list<int> indices, Expression value) { mixedTensor.set(indices, value); mixedTensorComputed.set(indices, true); }
+			void set_co(vector<int> indices, Expression value) { covariantTensor.set(indices, value); covariantTensorComputed.set(indices, true); }
+			void set_contra(vector<int> indices, Expression value) { contravariantTensor.set(indices, value); contravariantTensorComputed.set(indices, true); }
+			void set_mixed(vector<int> indices, Expression value) { mixedTensor.set(indices, value); mixedTensorComputed.set(indices, true); }
 
 			bool isBlank() {
 				return covariantTensorComputed.isAll(false) and contravariantTensorComputed.isAll(false) and mixedTensorComputed.isAll(false);
@@ -176,7 +176,7 @@ namespace geometry {
 
 		protected:
 
-			Expression computeCovariant(initializer_list<int> indices) override {
+			Expression computeCovariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 
 				// v_i = g_{ij} v^j	
@@ -187,7 +187,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeContravariant(initializer_list<int> indices) override {
+			Expression computeContravariant(vector<int> indices) override {
 				int i = *(indices.begin());
 
 				// v^i = g^{ij} v_j
@@ -198,7 +198,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeMixed(initializer_list<int> indices) override {
+			Expression computeMixed(vector<int> indices) override {
 				return contra(indices);
 			}
 
@@ -220,7 +220,7 @@ namespace geometry {
 
 		protected:
 
-			Expression computeCovariant(initializer_list<int> indices) override {
+			Expression computeCovariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 
@@ -232,7 +232,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeContravariant(initializer_list<int> indices) override {
+			Expression computeContravariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 
@@ -246,7 +246,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeMixed(initializer_list<int> indices) override {
+			Expression computeMixed(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 
@@ -284,7 +284,7 @@ namespace geometry {
 
 		protected:
 
-			Expression computeCovariant(initializer_list<int> indices) override {
+			Expression computeCovariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
@@ -297,7 +297,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeContravariant(initializer_list<int> indices) override {
+			Expression computeContravariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
@@ -329,7 +329,7 @@ namespace geometry {
 			// 	return result;
 			// }
 
-			Expression computeMixed(initializer_list<int> indices) override {
+			Expression computeMixed(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
@@ -360,7 +360,7 @@ namespace geometry {
 
 		protected:
 
-			Expression computeCovariant(initializer_list<int> indices) override {
+			Expression computeCovariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
@@ -374,7 +374,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeContravariant(initializer_list<int> indices) override {
+			Expression computeContravariant(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
@@ -394,7 +394,7 @@ namespace geometry {
 				return result;
 			}
 
-			Expression computeMixed(initializer_list<int> indices) override {
+			Expression computeMixed(vector<int> indices) override {
 				int i = *(indices.begin()); // Get the first index
 				int j = indices.begin()[1];
 				int k = indices.begin()[2];
@@ -491,9 +491,9 @@ namespace geometry {
 				define(new T(metric));
 			}
 
-			Expression co(string name, initializer_list<int> indices) { return get(name)->co(indices); }
-			Expression contra(string name, initializer_list<int> indices) { return get(name)->contra(indices); }
-			Expression mixed(string name, initializer_list<int> indices) { return get(name)->mixed(indices); }
+			Expression co(string name, vector<int> indices) { return get(name)->co(indices); }
+			Expression contra(string name, vector<int> indices) { return get(name)->contra(indices); }
+			Expression mixed(string name, vector<int> indices) { return get(name)->mixed(indices); }
 			Expression scalar(string name) { return get(name)->scalar(); }
 
 	};

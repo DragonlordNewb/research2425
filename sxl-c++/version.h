@@ -1,1 +1,2 @@
 #define VERSION_NUMBER "1.0 ALPHA"
+#define NUMERIC_VERSION 1

@@ -98,7 +98,7 @@ namespace data {
 				}
 			}
 
-			T& get(std::initializer_list<int> indices) {
+			T& get(std::vector<int> indices) {
 				if (rank == 1) {
 					int index = *indices.begin();
 					if (index < 0 or index >= dimension) { 
@@ -135,7 +135,7 @@ namespace data {
 				throw std::runtime_error("(SXL error code 2) Insufficient indices passed.");
 			}
 
-			void set(std::initializer_list<int> indices, T value) {
+			void set(std::vector<int> indices, T value) {
 				if (rank == 1) {
 					int index = *indices.begin();
 					if (index < 0 or index >= dimension) { 
