@@ -121,7 +121,7 @@ namespace geometry {
 
 			Expression co(initializer_list<int> indices) {
 				if (not covariantTensorComputed.get(indices)) {
-					covariantTensor.set(indices, computeCovariant(indices));
+					covariantTensor.set(indices, computeCovariant(indices).normal());
 					covariantTensorComputed.set(indices, true);
 				}
 				return covariantTensor.get(indices); 
@@ -129,7 +129,7 @@ namespace geometry {
 
 			Expression contra(initializer_list<int> indices) { 
 				if (not contravariantTensorComputed.get(indices)) {
-					contravariantTensor.set(indices, computeContravariant(indices));
+					contravariantTensor.set(indices, computeContravariant(indices).normal());
 					contravariantTensorComputed.set(indices, true);
 				}
 				return contravariantTensor.get(indices); 
@@ -137,7 +137,7 @@ namespace geometry {
 
 			Expression mixed(initializer_list<int> indices) {
 				if (not mixedTensorComputed.get(indices)) {
-					mixedTensor.set(indices, computeMixed(indices));
+					mixedTensor.set(indices, computeMixed(indices).normal());
 					mixedTensorComputed.set(indices, true);
 				}
 				return mixedTensor.get(indices); 
@@ -566,7 +566,7 @@ namespace tensors {
 							e3 = coordinates.ddx(m3, i);
 							// cout << "m" << i << j << " [ " << m1 << " ]" << " dd" << coordinates.x(k) << " = " << e1 << endl;;
 							firstKind = (e1 + e2 - e3) / 2;
-							set_co({i, j, k}, firstKind);
+							set_co({i, j, k}, firstKind.normal());
 						}
 					}
 				}
@@ -579,7 +579,7 @@ namespace tensors {
 							for (int l = 0; l < dim(); l++) {
 								secondKind = secondKind + (metric.contra({i, l}) * co({l, j, k}));
 							}
-							set_contra({i, j, k}, secondKind);
+							set_contra({i, j, k}, secondKind.normal());
 						}
 					}
 				}
@@ -606,7 +606,7 @@ namespace tensors {
 					for (int j = 0; j < dim(); j++) {
 						for (int k = 0; k < dim(); k++) {
 							val = mf->mixed(CCS, {i, j, k}) - mf->mixed(CCS, {i, k, j});
-							set_mixed({i, j, k}, val);
+							set_mixed({i, j, k}, val.normal());
 						}
 					}
 				}
@@ -626,33 +626,30 @@ namespace tensors {
 				// Manifold is not necessary since this
 				// is a metric-only computation
 
-				Expression a;
-				Expression b;
-				Expression e1;
-				Expression e2;
-				Expression e3;
-				Expression e4;
-				Expression e5;
-				Expression e6;
+				Expression a, b, e1, e2, e3, e4, e5, e6;
+
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						for (int k = 0; k < dim(); k++) {
 							for (int l = 0; l < dim(); l++) {
-								e1 = coordinates.ddx(mf->mixed(CCS, {i, l, j}), k);
-								e2 = coordinates.ddx(mf->mixed(CCS, {i, k, j}), l);
-								//cout << i << l << j << " " << e1 << " - " << i << k << j << " " << e2 << endl;
+								// Compute partial derivatives of Christoffel symbols
+								e1 = coordinates.ddx(mf->mixed(CCS, {i, l, j}), k);  // ∂_k Γ^i_jl
+								e2 = coordinates.ddx(mf->mixed(CCS, {i, k, j}), l);  // ∂_l Γ^i_jk
+								
 								a = e1 - e2;
 
 								b = 0;
 								for (int m = 0; m < dim(); m++) {
-									e3 = mf->mixed(CCS, {i, k, m});
-									e4 = mf->mixed(CCS, {m, l, j});
-									e5 = mf->mixed(CCS, {i, l, m});
-									e6 = mf->mixed(CCS, {m, k, j});
+									e3 = mf->mixed(CCS, {i, k, m});  // Γ^i_km
+									e4 = mf->mixed(CCS, {m, l, j});  // Γ^m_jl
+									e5 = mf->mixed(CCS, {i, l, m});  // Γ^i_lm
+									e6 = mf->mixed(CCS, {m, k, j});  // Γ^m_jk
+
 									b = b + (e3 * e4) - (e5 * e6);
 								}
 
-								set_mixed({i, j, k, l}, a + b);
+								// Store the computed Riemann tensor component
+								set_mixed({i, j, k, l}, (a + b).normal());
 							}
 						}
 					}
@@ -680,7 +677,7 @@ namespace tensors {
 						for (int k = 0; k < dim(); k++) {
 							val = val + mf->mixed(RIEMANN, {k, i, k, j});
 						}
-						set_co({i, j}, val);
+						set_co({i, j}, val.normal());
 					}
 				}
 			}

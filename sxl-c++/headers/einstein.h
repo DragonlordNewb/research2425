@@ -24,7 +24,7 @@ namespace einstein {
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						val = mf->co(RICCI, {i, j}) + (mf->scalar(RICCI) * mf->metric.co({i, j}))/2;
-						set_co({i, j}, val);
+						set_co({i, j}, val.normal());
 					}
 				}
 			}
@@ -47,7 +47,7 @@ namespace einstein {
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						val = mf->co(EINSTEIN, {i, j}) / kappa;
-						set_co({i, j}, val);
+						set_co({i, j}, val.normal());
 					}
 				}
 			}
@@ -70,7 +70,7 @@ namespace einstein {
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						val = 0; // patch this later
-						set_contra({i, j}, val);
+						set_contra({i, j}, val.normal());
 					}
 				}
 			}
