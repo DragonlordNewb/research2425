@@ -1,6 +1,6 @@
 #include "geometry.h"
 
-namespace raytracing {
+namespace tracing {
 
     class Geodesic {
 
