@@ -49,6 +49,7 @@ namespace geometry {
 			Matrix covariant;
 			data::RecursiveArray<Expression> contravariantTensor;
 			Matrix contravariant;
+			Expression determinant;
 
 		public:
 
@@ -65,6 +66,7 @@ namespace geometry {
 				}
 				covariantTensor = data::RecursiveArray<Expression>(2, _dimension);
 				contravariantTensor = data::RecursiveArray<Expression>(2, _dimension);
+				determinant = covariant.determinant();
 
 				for (int i = 0; i < dimension; i++) {
 					for (int j = 0; j < dimension; j++) {
@@ -76,6 +78,7 @@ namespace geometry {
 
 			Expression co(vector<int> indices) { return covariantTensor.get(indices); }
 			Expression contra(vector<int> indices) { return contravariantTensor.get(indices); }
+			Expression det() { return determinant; }
 
 	};
 
@@ -143,9 +146,9 @@ namespace geometry {
 				return mixedTensor.get(indices); 
 			}
 
-			virtual Expression computeCovariant(vector<int> indices) {}
-			virtual Expression computeContravariant(vector<int> indices) {}
-			virtual Expression computeMixed(vector<int> indices) {}
+			virtual Expression computeCovariant(vector<int> indices) = 0;
+			virtual Expression computeContravariant(vector<int> indices) = 0;
+			virtual Expression computeMixed(vector<int> indices) = 0;
 
 			void set_co(vector<int> indices, Expression value) { covariantTensor.set(indices, value); covariantTensorComputed.set(indices, true); }
 			void set_contra(vector<int> indices, Expression value) { contravariantTensor.set(indices, value); contravariantTensorComputed.set(indices, true); }

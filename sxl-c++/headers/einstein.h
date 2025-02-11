@@ -69,7 +69,12 @@ namespace einstein {
 				Expression val;
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
-						val = 0; // patch this later
+						val = mf->contra(EINSTEIN, {i, j});
+						for (int a = 0; a < dim(); a++) {
+							for (int b = 0; b < dim(); b++) {
+							val += coordinates.ddx(coordinates.ddx(metric.contra({i, j})*metric.contra({a, b}) - metric.contra({i, a})*metric.contra({j, b}), a), b) / (2 * kappa * abs(metric.det()));
+							}
+						}
 						set_contra({i, j}, val.normal());
 					}
 				}

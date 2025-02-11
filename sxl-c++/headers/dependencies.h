@@ -7,3 +7,4 @@ using namespace std;
 using Expression = GiNaC::ex;
 using Symbol = GiNaC::symbol;
 using Matrix = GiNaC::matrix;
+using Function = GiNaC::function;
