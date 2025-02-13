@@ -9,7 +9,7 @@ namespace formalism {
     // === Weak Field Approximation === //
 
     class WeakFieldApproximation: public Formalism {
-
+mf c 
         protected:
 
             geometry::Rank2Tensor perturbation;

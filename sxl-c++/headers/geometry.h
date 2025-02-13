@@ -146,9 +146,9 @@ namespace geometry {
 				return mixedTensor.get(indices); 
 			}
 
-			virtual Expression computeCovariant(vector<int> indices) = 0;
-			virtual Expression computeContravariant(vector<int> indices) = 0;
-			virtual Expression computeMixed(vector<int> indices) = 0;
+			virtual Expression computeCovariant(vector<int> indices) { return 0; }
+			virtual Expression computeContravariant(vector<int> indices) { return 0; }
+			virtual Expression computeMixed(vector<int> indices) { return 0; }
 
 			void set_co(vector<int> indices, Expression value) { covariantTensor.set(indices, value); covariantTensorComputed.set(indices, true); }
 			void set_contra(vector<int> indices, Expression value) { contravariantTensor.set(indices, value); contravariantTensorComputed.set(indices, true); }
@@ -164,7 +164,7 @@ namespace geometry {
 
 			bool isDetermined() { return not isUnderdetermined(); }
 
-			virtual void calculate(Manifold* mf) = 0; // { throw runtime_error("No calculation method provided."); }
+			virtual void calculate(Manifold* mf) { throw runtime_error("No calculation method provided."); }
 			virtual string name() { return NO_NAME; }
 
 			virtual Expression scalar() = 0;
@@ -208,6 +208,13 @@ namespace geometry {
 		public:
 
 			Rank1Tensor(MetricTensor _metric): Tensor::Tensor(_metric, 1) {}
+			Rank1Tensor(MetricTensor _metric, int x): Tensor::Tensor(_metric, 1) {
+				for (int i = 0; i < dim(); i++) {
+					set_co({i}, x);
+					set_contra({i}, x);
+					set_mixed({i}, x);
+				}
+			}
 
 			// Expression co(int i) { return co({i}); }
 			// Expression contra(int i) { return contra({i}); }
@@ -276,6 +283,16 @@ namespace geometry {
 				for (int i = 0; i < dim(); i++) {
 					for (int j = 0; j < dim(); j++) {
 						val += metric.contra({i, j}) * co({i, j});
+					}
+				}
+				return val;
+			}
+
+			Expression contract(Rank1Tensor other) {
+				Expression val = 0;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						val += co({i, j}) * other.contra({i}) * other.contra({j});
 					}
 				}
 				return val;
@@ -356,6 +373,21 @@ namespace geometry {
 			// int rank() const override { return 3; }
 
 			Expression scalar() override { throw runtime_error("Can't find the scalar of a rank-3 tensor."); }
+
+			Rank1Tensor contractWith_23(Rank1Tensor other) {
+				Rank1Tensor result(metric);
+				Expression val;
+				for (int x = 0; x < dim(); x++) {
+					val = 0;
+					for (int i = 0; i < dim(); i++) {
+						for (int j = 0; j < dim(); j++) {
+							val += mixed({x, i, j}) * other.contra(i) * other.contra(j);
+						}
+					}
+					result.set_contra({x}, val);
+				}
+				return result;
+			}
 
 	};
 
@@ -440,6 +472,8 @@ namespace geometry {
 			}
 
 	};
+
+	// === GEODESICS === //
 
 	using Vector = Rank1Tensor;
 
