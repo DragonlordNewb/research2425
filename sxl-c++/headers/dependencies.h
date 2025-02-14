@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <ginac/ginac.h>
 #include <ginac/print.h>

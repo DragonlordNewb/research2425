@@ -1,3 +1,4 @@
+#pragma once
 #include "dependencies.h"
 
 namespace geometry {
@@ -64,8 +65,8 @@ namespace geometry {
 				if (dim() != coordinates.dim()) {
 					throw std::runtime_error("(SXL error code 3) Metric and coordinate system have incompatible dimensions.");
 				}
-				covariantTensor = data::RecursiveArray<Expression>(2, _dimension);
-				contravariantTensor = data::RecursiveArray<Expression>(2, _dimension);
+				covariantTensor = data::RecursiveArray<Expression>(2, dim());
+				contravariantTensor = data::RecursiveArray<Expression>(2, dim());
 				determinant = covariant.determinant();
 
 				for (int i = 0; i < dimension; i++) {

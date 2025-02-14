@@ -1,4 +1,5 @@
 #include "sxl-c++/headers/einstein.h"
+#include "sxl-c++/headers/geometry.h"
 
 DECLARE_FUNCTION_1P(f)
 REGISTER_FUNCTION(f, dummy())
@@ -9,12 +10,14 @@ int main() {
 	Symbol V("V");
 	Symbol Z = coords.x(1);
 	Symbol R = coords.x(2);
-	Symbol k("k");
+	Symbol a("k");
+	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
+	Expression ff = a - b*R;  // f(R);
 	// c=G=M=1
 	geometry::MetricTensor metric({
-		{pow(c, 2) - pow(V, 2) + f, V, 0, 0},
-		{V, -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
+		{pow(c, 2) - ((1 - ff) * pow(V, 2)), ((1 - ff) * V), 0, 0},
+		{((1 - ff) * V), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
 		{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
 		{0, 0, 0, rhosq}
 	}, coords);
@@ -58,4 +61,6 @@ int main() {
 			cout << i << j << " " << mf.contra(SEM, {i, j}) << endl;
 		}
 	}
+	cout << endl << endl << endl;
+	cout << mf.scalar(SEM) << endl;
 }
