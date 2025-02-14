@@ -58,6 +58,10 @@ namespace geodesics {
             
     };
 
-    class GeodesicFamily
+    class GeodesicSet {
+
+		data::List<Geodesic> geodesics;
+
+	}
 
 };
