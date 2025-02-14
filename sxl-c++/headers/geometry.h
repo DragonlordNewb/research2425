@@ -56,8 +56,8 @@ namespace geometry {
 			CoordinateSystem coordinates;
 
 			MetricTensor() {}
-			MetricTensor(initializer_list<initializer_list<Expression>> values, CoordinateSystem _coordinates, int _dimension=4) {
-				dimension = _dimension;
+			MetricTensor(initializer_list<initializer_list<Expression>> values, CoordinateSystem _coordinates) {
+				dimension = _coordinates.dim();
 				covariant = Matrix(values);
 				contravariant = covariant.inverse();
 				coordinates = _coordinates;
@@ -381,7 +381,7 @@ namespace geometry {
 					val = 0;
 					for (int i = 0; i < dim(); i++) {
 						for (int j = 0; j < dim(); j++) {
-							val += mixed({x, i, j}) * other.contra(i) * other.contra(j);
+							val += mixed({x, i, j}) * other.contra({i}) * other.contra({j});
 						}
 					}
 					result.set_contra({x}, val);
