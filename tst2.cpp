@@ -8,9 +8,10 @@ DECLARE_FUNCTION_1P(f)
 REGISTER_FUNCTION(f, dummy());
 
 int main(){
-    symbol x("x");
-    ex e = f(x);
-    cout << e << endl;
-    cout << e.diff(x) << endl;
-    cout << e.diff(x, 2) << endl;
+    symbol a("a"), b("b");
+    ex expr = 2*a + b;
+    cout << expr << endl;
+    ex k = expr.subs(lst{a == 1, b == 2});
+    cout << k << endl;
+    cout << k + 1 << endl;
 }

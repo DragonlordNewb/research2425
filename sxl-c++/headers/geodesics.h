@@ -3,6 +3,8 @@
 
 namespace geodesics {
 
+    Symbol c("c");
+
     class Geodesic: public geometry::Dimensional {
 
         protected:
@@ -38,12 +40,22 @@ namespace geodesics {
                 computeProperVelocity();
             }
 
-            void computeProperVelocity() {
+            void computeLorentzFactor() {
                 Expression s = 0;
+                coordsVelocity.set_contra({0}, 1);
                 for (int i = 0; i < dim(); i++) {
                     for (int j = 0; j < dim(); j++) {
-                        s += metric.co({i, j}) * coordsVelocity.contra()
+                        s += metric.co({i, j}) * coordsVelocity.contra({i}) * coordsVelocity.contra({j});
                     }
+                }
+                Expression gamma = c / GiNaC::sqrt(s);
+                properVelocity.set_contra({0}, gamma);
+            }
+
+            void computeProperVelocity() {
+                computeLorentzFactor();
+                for (int i = 1; i < dim(); i++) {
+                    properVelocity.set_contra({i}, coordsVelocity.contra({i}) * properVelocity.contra({0}));
                 }
             }
 
