@@ -10,10 +10,10 @@ int main() {
 	Symbol V("V");
 	Symbol Z = coords.x(1);
 	Symbol R = coords.x(2);
-	Symbol a("k");
+	Symbol a("a");
 	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
-	Expression ff = a - b*R;  // f(R);
+	Expression ff = a - b*R;
 	// c=G=M=1
 	geometry::MetricTensor metric({
 		{pow(c, 2) - ((1 - ff) * pow(V, 2)), ((1 - ff) * V), 0, 0},
@@ -58,7 +58,7 @@ int main() {
 	// }
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
-			cout << i << j << " " << mf.contra(SEM, {i, j}) << endl;
+			cout << i << j << " " << mf.contra(EINSTEIN, {i, j}) << endl;
 		}
 	}
 	cout << endl << endl << endl;
