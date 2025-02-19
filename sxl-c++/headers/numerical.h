@@ -14,12 +14,9 @@ namespace geodesics {
 
     class Worldline: public Traceable {
 
-        protected:
-
-            geometry::Manifold manifold;
-
         public:
 
+            geometry::Manifold manifold;
             double properTime;
             geometry::MetricTensor metric;
             geometry::CoordinateSystem coords;
@@ -95,6 +92,14 @@ namespace geodesics {
 
                 // Good!
                 return expr;
+            }
+
+            geometry::Vector at(geometry::Vector vec) { 
+                geometry::Vector result(metric);
+                for (int i = 0; i < dim(); i++) {
+                    result.set_contra({i}, at(vec.contra({i})));
+                }
+                return result;
             }
 
     };
@@ -179,6 +184,22 @@ namespace geodesics {
     };
     using TensorForceField = Spin2ForceField;
 
+    class Condition {
+
+        public:
+
+            virtual string name() = 0;
+            virtual bool check(Worldline wl) = 0;
+
+    };
+
+    struct ConditionReport {
+
+        string conditionName;
+        bool satisfied;
+
+    };
+
     class TracerEngine {
 
         public:
@@ -186,11 +207,13 @@ namespace geodesics {
             geometry::MetricTensor metric;
             data::List<ForceField*> fields;
             data::List<Traceable*> tracers;
+            data::List<Condition*> conditions;
 
             TracerEngine(geometry::MetricTensor metric): metric(metric) {}
 
             void consider(Traceable* traceable) { tracers.append(traceable); }
             void define(ForceField* field) { fields.append(field); }
+            void require(Condition* condition) { conditions.append(condition); }
 
             geometry::Vector acceleration() {
                 geometry::Vector result(metric, 0);
@@ -200,9 +223,29 @@ namespace geodesics {
                 return result;
             }
 
-            void properTrace_all(double totalTime, double resolution) {
+            void properTrace(double totalTime, double precision, bool requireSatisfaction) {
+                // Run the simulation. The timestep is the inverse of precision:
+                // dtau = 1 / R.
+
                 geometry::Vector accel = acceleration();
-                
+                int totalSteps = totalTime * precision; // Rounds to nearest step, because I'm not dealing with it if it doesn't :)
+                Traceable* ptr;
+                int tracerCount = tracers.getLength();
+
+                stringstream ss;
+                ss << "Tracing " << tracerCount << " worldlines";
+                frosting::ProgressBar pb(ss.str(), totalSteps);
+                pb.print();
+
+                for (int step = 0; step < totalSteps; i++) {
+                    for (int index = 0; index < tracerCount; index++) {
+                        // For every tracer, tick it forward
+                        ptr = tracers.get(i);
+                        ptr->position = ptr->position + (ptr->properVelocity / precision);
+                        ptr->properVelocity = ptr->properVelocity + (ptr->at(accel) / precision);
+                        pb.done();
+                    }
+                }
             }
 
     };

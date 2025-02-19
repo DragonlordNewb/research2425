@@ -541,7 +541,7 @@ namespace frosting {
 				if (pct < 10) { ss << "__" << pct << "%"; }
 				else if (pct < 100) { ss << "_" << pct << "%"; }
 				else { return "100%"; }
-				return ss.str()
+				return ss.str();
 			}
 
 			string generateBar() {
@@ -560,7 +560,7 @@ namespace frosting {
 				else if (dt < 3600) { ss << dt/60 << " m " << dt % 60 << "s"; }
 				else if (dt < 86400) { ss << dt/3600 << "h" << (dt/60) % 60 << " h"; }
 				else { ss << dt/86400 << " d"; }
-				return ss.str()
+				return ss.str();
 			}
 
 			string generateString() {
@@ -568,13 +568,17 @@ namespace frosting {
 				ss << description << " [" << generatePercent() << "] [" << generateBar() << "] " << generateTime();
 			}
 
-			void done() {
-				current++; 
+			void print() {
 				cout << "\r" << generateString();
 				cout.flush();
 				if (current == total) {
 					cout << "\n";
 				}
+			}
+
+			void done() {
+				current++; 
+				print();
 			}
 		
 	};
