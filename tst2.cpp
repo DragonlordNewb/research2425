@@ -11,7 +11,7 @@ int main(){
     symbol a("a"), b("b");
     ex expr = 2*a + b;
     cout << expr << endl;
-    ex k = expr.subs(lst{a == 1, b == 2});
-    cout << k << endl;
-    cout << k + 1 << endl;
+    expr.subs(lst{a == 1, b == 2});
+    cout << expr << endl;
+    cout << expr + 1 << endl;
 }

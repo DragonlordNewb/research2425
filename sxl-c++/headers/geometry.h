@@ -24,6 +24,7 @@ namespace geometry {
 		private:
 
 			data::Array<Symbol> coordinates;
+			data::Array<Symbol> velocities;
 
 		public:
 
@@ -32,12 +33,15 @@ namespace geometry {
 				data::Array<std::string> arr(labels);
 				dimension = arr.getLength();
 				coordinates = data::Array<Symbol>(dimension);
+				velocities = data::Array<Symbol>(dimension);
 				for (int i = 0; i < dim(); i++) {
 					coordinates[i] = Symbol(arr.get(i));
+					velocities[i] = Symbol("v^" + arr.get(i))
 				}
 			}
 
 			Symbol& x(int index) { return coordinates.get(index); }
+			Symbol& v(int index) { return velocities.get(index); }
 			Expression ddx(Expression e, int index) { return e.diff(x(index)); }
 
 	};
@@ -224,6 +228,42 @@ namespace geometry {
 			// int rank() const override { return 1; }
 
 			Expression scalar() override { throw runtime_error("Can't find the scalar of a rank-1 tensor."); }
+
+			Rank1Tensor operator+(Rank1Tensor other) {
+				Rank1Tensor result(metric);
+				for (int i = 0; i < dim(); i++) {
+					result.set_co({i}, co({i}) + other.co({i}));
+					result.set_contra({i}, contra({i}) + other.contra({i}));
+				}
+				return result;
+			}
+
+			Rank1Tensor operator-(Rank1Tensor other) {
+				Rank1Tensor result(metric);
+				for (int i = 0; i < dim(); i++) {
+					result.set_co({i}, co({i}) - other.co({i}));
+					result.set_contra({i}, contra({i}) - other.contra({i}));
+				}
+				return result;
+			}
+
+			Rank1Tensor operator*(double s) {
+				Rank1Tensor result(metric);
+				for (int i = 0; i < dim(); i++) {
+					result.set_co({i}, co({i}) * s);
+					result.set_contra({i}, contra({i}) * s);
+				}
+				return result;
+			}
+
+			Rank1Tensor operator/(double s) {
+				Rank1Tensor result(metric);
+				for (int i = 0; i < dim(); i++) {
+					result.set_co({i}, co({i}) / s);
+					result.set_contra({i}, contra({i}) / s);
+				}
+				return result;
+			}
 
 	};
 
@@ -519,14 +559,19 @@ namespace geometry {
 				return get(name);
 			}
 
-			void define(Tensor* t) {
+			int define(Tensor* t) {
+				if (get(t->name) != nullptr) {
+					// Already defined
+					return 1;
+				}
 				t->calculate(this);
 				tensors.append(t);
+				return 0;
 			}
 
 			template <typename T>
-			void define() {
-				define(new T(metric));
+			int define() {
+				return define(new T(metric));
 			}
 
 			Expression co(string name, vector<int> indices) { return get(name)->co(indices); }
