@@ -247,7 +247,7 @@ namespace geometry {
 				return result;
 			}
 
-			Rank1Tensor operator*(double s) {
+			Rank1Tensor operator*(Expression s) {
 				Rank1Tensor result(metric);
 				for (int i = 0; i < dim(); i++) {
 					result.set_co({i}, co({i}) * s);
@@ -256,7 +256,7 @@ namespace geometry {
 				return result;
 			}
 
-			Rank1Tensor operator/(double s) {
+			Rank1Tensor operator/(Expression s) {
 				Rank1Tensor result(metric);
 				for (int i = 0; i < dim(); i++) {
 					result.set_co({i}, co({i}) / s);

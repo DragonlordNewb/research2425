@@ -5,21 +5,14 @@ namespace geodesics {
 
     Symbol c("c");
 
-    class Traceable: public geometry::Dimensional {
-
-        public:
-
-            virtual int followProper(int dtau, int steps) = 0;
-            virtual int followCoordinate(int dt, double until) = 0;
-
-    };
+    class Traceable: public geometry::Dimensional {};
 
     struct Charge { 
         Symbol symb;
         double value;
     };
 
-    class Geodesic: public Traceable {
+    class Worldline: public Traceable {
 
         protected:
 
@@ -35,7 +28,7 @@ namespace geodesics {
             geometry::Vector coordsVelocity;
             data::List<Charge> charges;
 
-            Geodesic(geometry::Manifold _manifold, geometry::Vector* _position=nullptr, geometry::Vector* _coordinateVelocity=nullptr): metric(_manifold.metric) {
+            Worldline(geometry::Manifold _manifold, geometry::Vector* _position=nullptr, geometry::Vector* _coordinateVelocity=nullptr): metric(_manifold.metric) {
                 dimension = _manifold.dim();
                 manifold = _manifold;
                 coords = manifold.metric.coordinates;
@@ -86,8 +79,6 @@ namespace geodesics {
                 }
             }
 
-            void on(geometry::Manifold mf) { manifold = mf; }
-            void on(geometry::Manifold* mf) { manifold = *mf; }
             Expression at(Expression expr) {
                 // Substitute current position and velocity
                 for (int i = 0; i < dim(); i++) {
@@ -105,32 +96,14 @@ namespace geodesics {
                 // Good!
                 return expr;
             }
-            // geometry::Vector geodesicAccelerationAt() {
-            //     geometry::Vector result(metric);
-            //     Expression val;
-            //     for (int i = 0; i < dim(); i++) {
-            //         val = 0;
-            //         for (int j = 0; j < dim(); j++) {
-            //             for (int k = 0; k < dim(); k++) {
-            //                 val += manifold.mixed(CCS, {i, j, k}) * properVelocity.contra({j}) * properVelocity.contra({k});
-            //             }
-            //         }
-            //         result.set_contra({i}, val);
-            //     }
-            //     return result;
-            // }
-
-            int followProper(int dtau, int steps) {
-
-            }
-
-            int followCoordinate(int dt, double until) = 0;
 
     };
 
-    class GeodesicSet {
+    class WorldlineSet: public Traceable {
 
-		data::List<Geodesic> geodesics;
+        public:
+
+		    data::List<Worldline> geodesics;
 
 	};
 
@@ -143,8 +116,10 @@ namespace geodesics {
         public:
 
             geometry::MetricTensor metric;
+            geometry::CoordinateSystem coords;
+            Expression coupling;
 
-            virtual geometry::Vector calculateForce() = 0;
+            virtual geometry::Vector acceleration() = 0;
 
     };
 
@@ -153,7 +128,24 @@ namespace geodesics {
         public:
 
             geometry::Rank2Tensor effectiveTensor;
-            geometry::Vector calculateForce() override {} 
+
+            Spin1ForceField(geometry::Rank2Tensor tensor, Expression c): metric(tensor.metric), coords(tensor.metric.coordinates) {
+                effectiveTensor = tensor;
+                coupling = c;
+            }
+
+            geometry::Vector acceleration() override {
+                geometry::Vector result(metric);
+                Expression val;
+                for (int i = 0; i < dim(); i++) {
+                    val = 0;
+                    for (int j = 0; j < dim(); j++) {
+                        val += effectiveTensor.mixed({i, j}) * coords.v(j);
+                    }
+                    result.set_contra({i}, val);
+                }
+                return result * coupling;
+            }
 
     };
     using VectorForceField = Spin1ForceField;
@@ -163,29 +155,52 @@ namespace geodesics {
         public:
 
             geometry::Rank3Tensor effectiveTensor;
-            geometry::Vector calculateForce() override {}
+
+            Spin2ForceField(geometry::Rank3Tensor tensor, Expression c): metric(tensor.metric), coords(tensor.metric.coordinates) {
+                effectiveTensor = tensor;
+                coupling = c;
+            }
+
+            geometry::Vector acceleration() override {
+                geometry::Vector result(metric);
+                Expression val;
+                for (int i = 0; i < dim(); i++) {
+                    val = 0;
+                    for (int j = 0; j < dim(); j++) {
+                        for (int k = 0; k < dim(); k++) {
+                            val += effectiveTensor.mixed({i, j}) * coords.v(j) * coords.v(k);
+                        }
+                    }
+                    result.set_contra({i}, val);
+                }
+                return result * coupling;
+            }
 
     };
     using TensorForceField = Spin2ForceField;
-
-    class Spin3ForceField: public ForceField {
-
-        public:
-
-            geometry::Rank4Tensor effectiveTensor;
-
-    };
 
     class TracerEngine {
 
         public:
 
             data::List<ForceField*> fields;
+            data::List<Traceable*> tracers;
 
             TracerEngine() {}
 
-            void define()
+            void consider(Traceable* traceable) { tracers.append(traceable); }
+            void define(ForceField* field) { fields.append(field); }
+
+            void trace()
 
     };
+
+};
+
+namespace fields {
+
+    geodesics::Spin2ForceField gravitationalField(geometry::Manifold manifold) {
+        return geodesics::Spin2ForceField(*manifold(CCS), 1);
+    }
 
 };
