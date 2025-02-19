@@ -521,3 +521,62 @@ namespace data {
 	};
 
 };
+
+namespace frosting {
+
+	class ProgressBar {
+
+		public:
+
+			string description;
+			int current;
+			int total;
+			double start;
+
+			ProgressBar(string d, int t): description(d), total(t), c(0), { start = time(0); }
+
+			string generatePercent() {
+				stringstream ss;
+				int pct = (int)(current * 100 / total);
+				if (pct < 10) { ss << "__" << pct << "%"; }
+				else if (pct < 100) { ss << "_" << pct << "%"; }
+				else { return "100%"; }
+				return ss.str()
+			}
+
+			string generateBar() {
+				int barLength = current * 50 / total;
+				int blankLength = 50 - barLength;
+				stringstream ss;
+				for (int i = 0; i < barLength; i++) { ss << "#"; }
+				for (int i = 0; i < blankLength; i++) { ss << " "; } 
+				return ss.str();
+			}
+
+			string generateTime() {
+				int dt = time(0) - start;
+				stringstream ss;
+				if (dt < 60) { ss << dt << " s"; }
+				else if (dt < 3600) { ss << dt/60 << " m " << dt % 60 << "s"; }
+				else if (dt < 86400) { ss << dt/3600 << "h" << (dt/60) % 60 << " h"; }
+				else { ss << dt/86400 << " d"; }
+				return ss.str()
+			}
+
+			string generateString() {
+				stringstream ss;
+				ss << description << " [" << generatePercent() << "] [" << generateBar() << "] " << generateTime();
+			}
+
+			void done() {
+				current++; 
+				cout << "\r" << generateString();
+				cout.flush();
+				if (current == total) {
+					cout << "\n";
+				}
+			}
+		
+	};
+
+};

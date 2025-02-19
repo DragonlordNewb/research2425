@@ -183,15 +183,27 @@ namespace geodesics {
 
         public:
 
+            geometry::MetricTensor metric;
             data::List<ForceField*> fields;
             data::List<Traceable*> tracers;
 
-            TracerEngine() {}
+            TracerEngine(geometry::MetricTensor metric): metric(metric) {}
 
             void consider(Traceable* traceable) { tracers.append(traceable); }
             void define(ForceField* field) { fields.append(field); }
 
-            void trace()
+            geometry::Vector acceleration() {
+                geometry::Vector result(metric, 0);
+                for (int i = 0; i < fields.getLength(); i++) {
+                    result = result + fields.get(i)->acceleration();
+                }
+                return result;
+            }
+
+            void properTrace_all(double totalTime, double stepSize) {
+                geometry::Vector accel = acceleration();
+                
+            }
 
     };
 
