@@ -200,7 +200,7 @@ namespace geodesics {
                 return result;
             }
 
-            void properTrace_all(double totalTime, double stepSize) {
+            void properTrace_all(double totalTime, double resolution) {
                 geometry::Vector accel = acceleration();
                 
             }
