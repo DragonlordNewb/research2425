@@ -36,7 +36,7 @@ namespace geometry {
 				velocities = data::Array<Symbol>(dimension);
 				for (int i = 0; i < dim(); i++) {
 					coordinates[i] = Symbol(arr.get(i));
-					velocities[i] = Symbol("v^" + arr.get(i))
+					velocities[i] = Symbol("v^" + arr.get(i));
 				}
 			}
 
@@ -560,7 +560,7 @@ namespace geometry {
 			}
 
 			int define(Tensor* t) {
-				if (get(t->name) != nullptr) {
+				if (get(t->name()) != nullptr) {
 					// Already defined
 					return 1;
 				}

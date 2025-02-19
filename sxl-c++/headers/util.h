@@ -533,7 +533,7 @@ namespace frosting {
 			int total;
 			double start;
 
-			ProgressBar(string d, int t): description(d), total(t), c(0), { start = time(0); }
+			ProgressBar(string d, int t): description(d), total(t), current(0) { start = time(0); }
 
 			string generatePercent() {
 				stringstream ss;
@@ -566,6 +566,7 @@ namespace frosting {
 			string generateString() {
 				stringstream ss;
 				ss << description << " [" << generatePercent() << "] [" << generateBar() << "] " << generateTime();
+				return ss.str();
 			}
 
 			void print() {
