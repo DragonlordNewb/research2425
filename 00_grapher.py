@@ -144,7 +144,7 @@ C = 299792458
 lim = 2.5
 
 
-def f_cartesian(x, y, z, c=1, a=1, b=1, V=1):
+def f_cartesian(x, y, z, c=1, a=1, b=0.5, V=1):
     R = np.sqrt(x**2 + y**2 + z**2)
     Z = z
     return f(R, Z, c, a, b, V)
