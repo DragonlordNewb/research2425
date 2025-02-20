@@ -98,36 +98,40 @@ def f6(R, Z, c=1, a=1, b=1, V=1):
 
 def f7(R, Z, c=299792458, a=.1, b=1, V=2):
     # Hyperbolic tangential dilation-shift
-    tanh_term = np.tanh(-b + R)
-    numerator1 = V**4 * (
-        42 * R * tanh_term**5 * Z**2 * a**4 + 32 * tanh_term**2 * Z**2 * a**2 +
-        45 * R * tanh_term**2 * Z**2 * a**4 - 45 * R**3 * tanh_term**2 * a**4 +
-        24 * R**2 * tanh_term**4 * a**4 + 32 * R**2 * tanh_term**3 * a**3 -
-        3 * R**3 * a**4 - 54 * R**3 * tanh_term * a**3 - 64 * R * tanh_term * Z**2 * a**2 +
-        24 * tanh_term * Z**2 * a**4 - 8 * R**2 * tanh_term**5 * a**4 + 32 * R**3 * tanh_term * a**2 +
-        78 * R * tanh_term * Z**2 * a**3 - 8 * R**2 * a**4 - 35 * R * tanh_term**4 * Z**2 * a**4 -
-        14 * R * Z**2 * a**3 - 28 * R * tanh_term**3 * Z**2 * a**3 + 24 * R**2 * tanh_term * a**4 -
-        90 * R**3 * tanh_term**4 * a**3 + 20 * R**3 * tanh_term**3 * a**4 - 8 * Z**2 * a**4 +
-        64 * R * tanh_term**3 * Z**2 * a**2 - 16 * tanh_term**3 * Z**2 * a**4 + 16 * R * Z**2 * a**2 -
-        32 * tanh_term**4 * Z**2 * a**3 + 24 * R**3 * tanh_term**4 * a**2 +
-        42 * R**3 * tanh_term**5 * a**3 - 42 * R**3 * tanh_term**5 * a**4 - 32 * Z**2 * a**2 -
-        32 * R**3 * tanh_term**3 * a**2 - 48 * R * tanh_term**4 * Z**2 * a**2 +
-        24 * tanh_term**4 * Z**2 * a**4 + 64 * tanh_term**3 * Z**2 * a**3 +
-        12 * R**3 * tanh_term**3 * a**3 + 32 * Z**2 * a**3 + 35 * R**3 * tanh_term**4 * a**4 -
-        32 * R**2 * tanh_term * a**3 - 16 * R**2 * tanh_term**2 * a**4 -
-        20 * R * tanh_term**3 * Z**2 * a**4 - 32 * tanh_term**3 * Z**2 * a**2 +
-        3 * R * Z**2 * a**4 + 114 * R * tanh_term**4 * Z**2 * a**3 + 16 * R**2 * a**3 -
-        13 * R * tanh_term**6 * Z**2 * a**4 - 8 * R**3 * a**2 - 22 * R * tanh_term * Z**2 * a**4 +
-        32 * tanh_term * Z**2 * a**2 - 8 * tanh_term**5 * Z**2 * a**4 -
-        16 * tanh_term**2 * Z**2 * a**4 + 32 * R * tanh_term**2 * Z**2 * a**2 -
-        16 * R**3 * tanh_term**2 * a**2 + 22 * R**3 * tanh_term * a**4 +
-        13 * R**3 * tanh_term**6 * a**4 - 64 * tanh_term * Z**2 * a**3 +
-        6 * R**3 * a**3 - 16 * R**2 * tanh_term**3 * a**4 - 16 * R**2 * tanh_term**4 * a**3 +
-        84 * R**3 * tanh_term**2 * a**3 - 50 * R * tanh_term**5 * Z**2 * a**3 -
-        100 * R * tanh_term**2 * Z**2 * a**3)
-    denominator = R**3 * (2 * tanh_term * V**2 * a + 4 * c**2 + V**2 * a**2 -
-        2 * V**2 * a - 2 * tanh_term * V**2 * a**2 + tanh_term**2 * V**2 * a**2) ** 3
-    return numerator1 / denominator
+    return -4 * (16 * np.tanh(-b + R * a)**3 * R**3 * V**2 * c**2 * a**2 - 5 * R**3 * V**2 * c**2 * a**2 + 
+                 5 * R * V**2 * c**2 * Z**2 * a**2 + 16 * R**2 * V**2 * c**2 * a + 
+                 8 * np.tanh(-b + R * a)**3 * R**2 * V**2 * c**2 * a + 
+                 8 * np.tanh(-b + R * a)**3 * V**2 * c**2 * Z**2 * a - 
+                 26 * np.tanh(-b + R * a)**2 * R * V**2 * c**2 * Z**2 * a**2 - 
+                 8 * np.tanh(-b + R * a) * V**2 * c**2 * Z**2 * a + 
+                 21 * np.tanh(-b + R * a)**4 * R * V**2 * c**2 * Z**2 * a**2 - 
+                 16 * np.tanh(-b + R * a) * R**3 * V**2 * c**2 * a**2 - 
+                 8 * np.tanh(-b + R * a) * R**2 * V**2 * c**2 * a - 
+                 16 * np.tanh(-b + R * a)**2 * R**2 * V**2 * c**2 * a - 
+                 21 * np.tanh(-b + R * a)**4 * R**3 * V**2 * c**2 * a**2 + 
+                 26 * np.tanh(-b + R * a)**2 * R**3 * V**2 * c**2 * a**2) / (R**3 * (np.tanh(-b + R * a)**2 * V**2 - 2 * np.tanh(-b + R * a) * V**2 + 4 * c**2)**3) - \
+           (V**4 * (24 * np.tanh(-b + R * a)**3 * R**2 * a + 
+                    8 * np.tanh(-b + R * a)**5 * Z**2 * a + 
+                    16 * np.tanh(-b + R * a)**2 * Z**2 * a + 
+                    8 * R**3 * a**2 - 
+                    36 * np.tanh(-b + R * a)**3 * R**3 * a**2 - 
+                    13 * np.tanh(-b + R * a)**6 * R**3 * a**2 - 
+                    6 * np.tanh(-b + R * a) * R**3 * a**2 - 
+                    16 * np.tanh(-b + R * a)**4 * Z**2 * a - 
+                    2 * np.tanh(-b + R * a) * R * Z**2 * a**2 - 
+                    32 * np.tanh(-b + R * a) * R**2 * a + 
+                    13 * np.tanh(-b + R * a)**6 * R * Z**2 * a**2 - 
+                    10 * np.tanh(-b + R * a)**4 * R * Z**2 * a**2 + 
+                    19 * np.tanh(-b + R * a)**2 * R**3 * a**2 + 
+                    42 * np.tanh(-b + R * a)**5 * R**3 * a**2 + 
+                    36 * np.tanh(-b + R * a)**3 * R * Z**2 * a**2 + 
+                    32 * np.tanh(-b + R * a)**2 * R**2 * a + 
+                    8 * np.tanh(-b + R * a)**5 * R**2 * a - 
+                    8 * np.tanh(-b + R * a)**3 * Z**2 * a - 
+                    14 * np.tanh(-b + R * a)**4 * R**3 * a**2 - 
+                    32 * np.tanh(-b + R * a)**4 * R**2 * a - 
+                    3 * np.tanh(-b + R * a)**2 * R * Z**2 * a**2 - 
+                    34 * np.tanh(-b + R * a)**5 * R * Z**2 * a**2)) / (R**3 * (np.tanh(-b + R * a)**2 * V**2 - 2 * np.tanh(-b + R * a) * V**2 + 4 * c**2)**3)
 
 def f8(R, Z, a=1, b=1, c=1, V=1):
     # Linear dilation

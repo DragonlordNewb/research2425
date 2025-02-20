@@ -30,25 +30,25 @@ int main() {
 	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
 	Symbol Ve("V"); // Expression Ve = V(t);
-	Expression fe = a - b*R;
+	Expression fe = 1 - GiNaC::tanh(a*R - b) / 2;
 	Expression F = 1 - fe;
 	// c=G=M=1
 
 	// D+S
-	// geometry::MetricTensor metric({
-	// 	{pow(c, 2) - (F * pow(Ve, 2)), (F * Ve), 0, 0},
-	// 	{(F * Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
-	// 	{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
-	// 	{0, 0, 0, rhosq}
-	// }, coords);
-
-	// D
 	geometry::MetricTensor metric({
-		{pow(c, 2) - (F * pow(Ve, 2)), (Ve), 0, 0},
-		{(Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
+		{pow(c, 2) - (F * pow(Ve, 2)), (F * Ve), 0, 0},
+		{(F * Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
 		{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
 		{0, 0, 0, rhosq}
 	}, coords);
+
+	// D
+	// geometry::MetricTensor metric({
+	// 	{pow(c, 2) - (F * pow(Ve, 2)), (Ve), 0, 0},
+	// 	{(Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
+	// 	{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
+	// 	{0, 0, 0, rhosq}
+	// }, coords);
 
 
 	geometry::Manifold mf(metric);
