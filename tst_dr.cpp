@@ -7,6 +7,14 @@ REGISTER_FUNCTION(V, dummy())
 DECLARE_FUNCTION_1P(f)
 REGISTER_FUNCTION(f, dummy())
 
+// f1: linear (b - aR)
+// f2: quadratic (b - aR^2)
+// f3: cubie (b - aR^3)
+// f4: quartic (b - aR^4)
+// f5: decic (b - aR^10)
+// f6: 50th (b - aR^50)
+// f7: tanh (a (1 - tanh(R-b)) / 2)
+
 int main() {
 	geometry::CoordinateSystem coords = {"t", "Z", "R", "theta"};
 	Symbol c("c");
@@ -17,7 +25,7 @@ int main() {
 	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
 	Symbol Ve("V"); // Expression Ve = V(t);
-	Expression fe = a - b*pow(R, 2);
+	Expression fe = a * (1 - GiNaC::tanh(R - b)) / 2;
 	Expression F = 1 - fe;
 	// c=G=M=1
 	geometry::MetricTensor metric({
