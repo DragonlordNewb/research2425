@@ -1,12 +1,13 @@
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
+import sympy
 
 if len(sys.argv) == 1:
 	print("Use \"contour\" or \"surface\".")
 
 def f1(R, Z, c=1, a=1, b=1, V=1):
-	# Linear
+	# Linear dilation-shift
     numerator = (1/4) * (8*V**4*R**2*a**2*b + 5*V**4*R**5*b**4 - 2*V**4*R**3*b**2 
                 - 13*V**4*R**3*a*b**2 + 16*Z**2*V**4*a**2*b - 8*V**4*R**2*a**3*b 
                 - 39*Z**2*V**4*R*a*b**2 - 8*Z**2*V**4*a**3*b + 3*c**2*Z**2*V**2*R*b**2 
@@ -20,7 +21,7 @@ def f1(R, Z, c=1, a=1, b=1, V=1):
     return numerator / denominator
 
 def f2(R, Z, c=1, a=1, b=1, V=1):
-	# Quadratic
+	# Quadratic dilation-shift
     numerator1 = (10 * a**2 * b + 5 * b**4 * R**6 - 8 * a**3 * b + 3 * a**2 * b**2 * Z**2 
                  - 17 * a * b**2 * R**2 + 3 * b**4 * R**4 * Z**2 - 7 * a * b**2 * Z**2 
                  + 21 * a**2 * b**2 * R**2 + 4 * b**2 * Z**2 - 2 * a * b + 7 * b**3 * R**4 
@@ -33,7 +34,7 @@ def f2(R, Z, c=1, a=1, b=1, V=1):
     return - numerator1 / denominator - term2
 
 def f3(R, Z, c=1, a=1, b=0, V=1):
-	# Cubic
+	# Cubic dilation-shift
     numerator1 = (3/4) * V**4 * (8 * Z**2 * a * b**3 + 32 * R**2 * a * b**2 + R**9 * Z**2 * a**4 
                 + 4 * R**3 * Z**2 * a**2 - 24 * R**2 * a * b**3 - 16 * Z**2 * a * b**2 
                 + 6 * R**6 * Z**2 * a**3 * b + 5 * R**6 * Z**2 * a**3 + 8 * Z**2 * a * b 
@@ -49,6 +50,7 @@ def f3(R, Z, c=1, a=1, b=0, V=1):
     return numerator1 / denominator + term2
 
 def f4(R, Z, c=1, a=1, b=1, V=1):
+    # Quartic dilation-shift
     numerator1 = (9 * a**2 * R**4 * V**2 * c**2 * Z**2 + 4 * a * V**2 * c**2 * Z**2 
                  - 3 * a * R**2 * V**2 * c**2 + 8 * a * b * R**2 * V**2 * c**2 
                  - 4 * a * b * V**2 * c**2 * Z**2 - 13 * a**2 * R**6 * V**2 * c**2)
@@ -65,6 +67,7 @@ def f4(R, Z, c=1, a=1, b=1, V=1):
     return -4 * (numerator1 / denominator) - 4 * (term2 / denominator)
 
 def f5(R, Z, c=1, a=1, b=1, V=1):
+    # 10th-power dilation-shift
     numerator1 = (105 * a**2 * b**2 * R**18 + 8 * a**2 * R**18 + 58 * a * b**2 * R**8 + 32 * a * b * R**6 * Z**2 
                  - 17 * a**4 * R**36 * Z**2 + 93 * a**2 * b * R**16 * Z**2 + 25 * a**4 * R**38 + 32 * a * b**3 * R**6 * Z**2 
                  - 40 * a * b**3 * R**8 + 66 * a**3 * b * R**26 * Z**2 + 43 * a**3 * R**28 - 29 * a**3 * R**26 * Z**2 
@@ -79,6 +82,7 @@ def f5(R, Z, c=1, a=1, b=1, V=1):
     return -5 * (numerator1 / denominator + term2)
 
 def f6(R, Z, c=1, a=1, b=1, V=1):
+    # 50th-power dilation-shift
     numerator1 = (-25 * (98 * a * R**48 * V**2 * c**2 - 325 * a**2 * R**98 * V**2 * c**2 + 317 * a**2 * R**96 * V**2 * c**2 * Z**2 
                  - 200 * a * b * R**48 * V**2 * c**2 - 192 * a * R**46 * V**2 * c**2 * Z**2 + 192 * a * b * R**46 * V**2 * c**2 * Z**2))
     
@@ -93,6 +97,7 @@ def f6(R, Z, c=1, a=1, b=1, V=1):
     return numerator1 / denominator + term2
 
 def f7(R, Z, c=299792458, a=.1, b=1, V=2):
+    # Hyperbolic tangential dilation-shift
     tanh_term = np.tanh(-b + R)
     numerator1 = V**4 * (
         42 * R * tanh_term**5 * Z**2 * a**4 + 32 * tanh_term**2 * Z**2 * a**2 +
@@ -124,7 +129,12 @@ def f7(R, Z, c=299792458, a=.1, b=1, V=2):
         2 * V**2 * a - 2 * tanh_term * V**2 * a**2 + tanh_term**2 * V**2 * a**2) ** 3
     return numerator1 / denominator
 
-f = f2
+def f8(R, Z, a=1, b=1, c=1, V=1):
+    # Linear dilation
+    return (1/2) * (V**4 * (3 * R * b**2 - 4 * a * b)) / (R * (V**2 * a - R * V**2 * b + c**2)**3) \
+           - 2 * (V**2 * c**2 * b) / (R * (V**2 * a - R * V**2 * b + c**2)**3)
+
+f = f8
 
 C = 299792458
 lim = 2.5

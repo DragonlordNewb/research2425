@@ -7,6 +7,7 @@ REGISTER_FUNCTION(V, dummy())
 DECLARE_FUNCTION_1P(f)
 REGISTER_FUNCTION(f, dummy())
 
+// Dilation + Shift
 // f1: linear (b - aR)
 // f2: quadratic (b - aR^2)
 // f3: cubie (b - aR^3)
@@ -14,6 +15,9 @@ REGISTER_FUNCTION(f, dummy())
 // f5: decic (b - aR^10)
 // f6: 50th (b - aR^50)
 // f7: tanh (a (1 - tanh(R-b)) / 2)
+//
+// Dilation only
+// f8: linear (b - aR)
 
 int main() {
 	geometry::CoordinateSystem coords = {"t", "Z", "R", "theta"};
@@ -25,15 +29,27 @@ int main() {
 	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
 	Symbol Ve("V"); // Expression Ve = V(t);
-	Expression fe = a * (1 - GiNaC::tanh(R - b)) / 2;
+	Expression fe = a - b*R;
 	Expression F = 1 - fe;
 	// c=G=M=1
+
+	// D+S
+	// geometry::MetricTensor metric({
+	// 	{pow(c, 2) - (F * pow(Ve, 2)), (F * Ve), 0, 0},
+	// 	{(F * Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
+	// 	{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
+	// 	{0, 0, 0, rhosq}
+	// }, coords);
+
+	// D
 	geometry::MetricTensor metric({
-		{pow(c, 2) - (F * pow(Ve, 2)), (F * Ve), 0, 0},
-		{(F * Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
+		{pow(c, 2) - (F * pow(Ve, 2)), (Ve), 0, 0},
+		{(Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
 		{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
 		{0, 0, 0, rhosq}
 	}, coords);
+
+
 	geometry::Manifold mf(metric);
 	// tensors::ConnectionCoefficients ccs(metric);
 	// mf.define(&ccs);

@@ -21,8 +21,8 @@ int main() {
 	Expression F = 1 - fe;
 	// c=G=M=1
 	geometry::MetricTensor metric({
-		{pow(c, 2) - (F * pow(Ve, 2)), (F * Ve), 0, 0},
-		{(F * Ve), -1, 0, 0},
+		{pow(c, 2) - (F * pow(Ve, 2)), (Ve), 0, 0},
+		{(Ve), -1, 0, 0},
 		{0, 0, -1, 0},
 		{0, 0, 0, -1}
 	}, coords);
