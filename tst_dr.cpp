@@ -30,7 +30,7 @@ int main() {
 	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
 	Symbol V("V"); // Expression Ve = V(t);
-	Expression fe = 1 - pow(R, 2);
+	Expression fe = 1 - GiNaC::sqrt(R);
 	Expression F = 1 - fe;
 	// c=G=M=1
 
