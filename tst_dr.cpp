@@ -29,15 +29,15 @@ int main() {
 	Symbol a("a");
 	Symbol b("b");
 	Expression rhosq = pow(R, 2) - pow(Z, 2);
-	Symbol Ve("V"); // Expression Ve = V(t);
-	Expression fe = 1 - GiNaC::tanh(a*R - b) / 2;
+	Symbol V("V"); // Expression Ve = V(t);
+	Expression fe = 1 - pow(R, 2);
 	Expression F = 1 - fe;
 	// c=G=M=1
 
 	// D+S
 	geometry::MetricTensor metric({
-		{pow(c, 2) - (F * pow(Ve, 2)), (F * Ve), 0, 0},
-		{(F * Ve), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
+		{pow(c, 2) - (F * pow(V, 2)), (F * V), 0, 0},
+		{(F * V), -1 - (pow(Z, 2) / rhosq), R * Z / rhosq, 0},
 		{0, R * Z / rhosq, -pow(R, 2) / rhosq, 0},
 		{0, 0, 0, rhosq}
 	}, coords);
@@ -56,41 +56,30 @@ int main() {
 	// mf.define(&ccs);
 	// tensors::TorsionTensor tt(metric);
 	// mf.define(&tt);
-	cout << "ccs" << endl;
 	mf.define<tensors::ConnectionCoefficients>();
-	cout << "torsion" << endl;
 	mf.define<tensors::TorsionTensor>();
-	cout << "riemann" << endl;
 	mf.define<tensors::RiemannTensor>();
-	cout << "ricci" << endl;
 	mf.define<tensors::RicciTensor>();
-	cout << "einstein" << endl;
 	mf.define<einstein::EinsteinTensor>();
 	mf.define<einstein::StressEnergyMomentumTensor>();
 	mf.define<einstein::LandauLifschitzPseudotensor>();
 	std::string _;
 	cout << GiNaC::latex;
+
+	geometry::Vector driveParallel(metric, 0);
+	driveParallel.set_contra({0}, 1); // gamma=1
+	
+	geometry::Vector stationary(metric, 0);
+	stationary.set_contra({0}, 1);
+	stationary.set_contra({1}, V);
+
+	geometry::Rank2Tensor* ein = static_cast<geometry::Rank2Tensor*>(mf(EINSTEIN));
+	cout << endl << endl << "Drive frame Eulerian energy density: " << ein->contra({0, 0}) << endl << endl;
+	cout << "Stationary frame Eulerian energy density: " << ein->contra({0, 0}) + 2*V*ein->contra({0, 1}) + pow(V, 2)*ein->contra({1, 1}) << endl;
 	// for (int i = 0; i < 4; i++) {
 	// 	for (int j = 0; j < 4; j++) {
-	// 		for (int k = 0; k < 4; k++) {
-	// 			cout << i << j << k << " " << mf.mixed(CCS, {i, j, k}) << endl;
-	// 		}
+	// 		cout << i << j << " " << mf.contra(EINSTEIN, {i, j}).collect(pow(Ve, 4)) << endl;
 	// 	}
 	// }
-	// for (int i = 0; i < 4; i++) {
-	// 	for (int j = 0; j < 4; j++) {
-	// 		for (int k = 0; k < 4; k++) {
-	// 			for (int l = 0; l < 4; l++) {
-	// 				cout << i+1 << j+1 << k+1 << l+1 << " " << mf.mixed(RIEMANN, {i, j, k, l}) << endl;
-	// 			}
-	// 		}
-	// 	}
-	// }
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			cout << i << j << " " << mf.contra(EINSTEIN, {i, j}).collect(pow(Ve, 4)) << endl;
-		}
-	}
 	cout << endl << endl << endl;
-	cout << mf.scalar(SEM) << endl;
 }

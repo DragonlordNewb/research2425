@@ -265,6 +265,31 @@ namespace geometry {
 				return result;
 			}
 
+			Expression computeCoordinateGamma() {
+				// Compute the Lorentz factor, assuming the spatial components here are 
+				// a 3-velocity. Assumes an (n-1)+1-dimensional spacetime.
+
+				Expression s = 0;
+				for (int i = 0; i < dim(); i++) {
+					for (int j = 0; j < dim(); j++) {
+						if (i == 0 and j == 0) {
+							s = s + 1;
+						} else if (i == 0) {
+							s = s + metric.co({0, j}) * contra({j});
+						} else if (j == 0) {
+							s = s + metric.co({i, 0}) * contra({i});
+						} else {
+							s = s + metric.co({i, j}) * contra({i}) * contra({j});
+						}
+					}
+				}
+				return (Symbol("c") / GiNaC::sqrt(s)).normal(); 
+			}
+
+			// Expression coordinateToProper() {
+			// 	for 
+			// }
+
 	};
 
 	class Rank2Tensor: public Tensor {
