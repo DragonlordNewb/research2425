@@ -213,7 +213,7 @@ X, Z = np.meshgrid(x_values, z_values)
 C = 299792458
 
 def cartesify(fn):
-	def decorated(x, z, c=C, V=C):
+	def decorated(x, z, c=1, V=1):
 		R = x**2 + z**2 + 0 # y=0
 		Z = z
 		return fn(R, Z, c, V)
@@ -221,8 +221,8 @@ def cartesify(fn):
 
 # Compute function values
 
-BLOCK_1_SELECTOR = root_drive
-BLOCK_2_SELECTOR = root_stat
+BLOCK_1_SELECTOR = linear_drive
+BLOCK_2_SELECTOR = linear_stat
 
 F1 = cartesify(BLOCK_1_SELECTOR)
 F2 = cartesify(BLOCK_2_SELECTOR)
