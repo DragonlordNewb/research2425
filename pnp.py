@@ -1,5 +1,7 @@
 from typing import Any, Iterable, Callable
+from itertools import combinations
 from math import floor
+import random
 
 AB_ERROR = """Alpha/beta pair did not correctly generate.
 
@@ -89,7 +91,7 @@ class OperationCounter:
 	def __init__(self) -> None:
 		self.operations = 0
 
-	def __inv__(self) -> None:
+	def increment(self) -> None:
 		"""
 		Creates the notation "~OperationCounter" to increment
 		the counter and add one to the internal count.
@@ -129,7 +131,7 @@ class Graph:
 		Assumed to be an O(1) lookup.
 		"""
 
-		~oc
+		oc.increment()
 		return (x, y) in self.edges or (y, x) in self.edges if x != y else False # just in case
 
 	def vertices(self) -> Iterable[Any]:
@@ -202,7 +204,7 @@ class Graph:
 		"""
 
 		for edge in self.edges:
-			~oc # doesn't end up mattering
+			oc.increment() # doesn't end up mattering
 			yield set(edge)
 
 	def all_triples(self, oc: OperationCounter=0) -> Iterable[set[Any, Any, Any]]:
@@ -236,6 +238,7 @@ class Graph:
 
 		Worst-case time to finish: (n-3)(n-2)(n-1)n = O(n^4)
 		"""
+
 		for w in self.vertices():
 			for x in self.vertices():
 				if w == x:
@@ -256,6 +259,45 @@ class Graph:
 								and self.adjacency(x, z, oc) \
 								and self.adjacency(y, z, oc):
 							yield set((w, x, y, z))
+
+	def all_quintuples(self, oc: OperationCounter=0) -> Iterable[set[Any, Any, Any, Any, Any]]:
+		"""
+		See previous methods.
+		
+		This is the largest required because 3+2=5. I don't have
+		a better explanation. I guess it guarantees that the recursive
+		.link method always has base cases for n.
+		"""
+
+		for v in self.vertices():
+			for w in self.vertices():
+				if v == w:
+					continue
+
+				for x in self.vertices():
+					if x == v or x == w:
+						continue
+
+					for y in self.vertices():
+						if y == x or y == w or y == v:
+							continue
+
+						for z in self.vertices():
+							if z == v or z == w or z == x or z == y:
+								continue
+
+							if self.adjacency(v, w, oc) \
+									and self.adjacency(v, x, oc) \
+									and self.adjacency(v, y, oc) \
+									and self.adjacency(v, z, oc) \
+									and self.adjacency(w, x, oc) \
+									and self.adjacency(w, y, oc) \
+									and self.adjacency(w, z, oc) \
+									and self.adjacency(x, y, oc) \
+									and self.adjacency(x, z, oc) \
+									and self.adjacency(y, z, oc):
+								yield set((w, x, y, z))
+							
 
 	def link(self, clique: set, with_type: str, oc: OperationCounter) -> Iterable[set]:
 		"""
@@ -342,8 +384,9 @@ class Graph:
 		problems, but it is by no means fast compared to something like list sort.
 		"""
 
+		escape: bool = None
+
 		if n == 2:
-			# In practice this shouldn't ever happen, but whatever.
 			for edge in self.all_doubles(oc):
 				yield edge
 		elif n == 3:
@@ -352,21 +395,46 @@ class Graph:
 		elif n == 4:
 			for quadruple in self.all_quadruples(oc):
 				yield quadruple
-		elif n > 4:
-			if beta(n) == 0:
-				# No beta-correction required
-				pass
-			elif beta(n) == 1:
-				# Beta = 1  -->  n = 3a + 2  -->  Clique is triples plus a double
-			elif beta(n) == 2:
-				# Beta = 2  -->  n = 3a + 4  -->  Clique is triples plus two doubles
-			else:
-				raise ValueError(AB_ERROR)
-
+		elif n == 5:
+			for quintuple in self.all_quintuples(oc):
+				yield quintuple
+		elif n > 5:
+			for clique in self.cliques_of_size(n - 3, oc):
+				for new_clique in link(clique, TRIPLES):
+					yield new_clique
 		else:
 			raise ValueError(f"Invalid input for clique size: {n}. Must be an int >= 2.")
 
+def generate_graph_with_cliques(num_vertices):
+    vertices = [chr(65 + i) for i in range(num_vertices)]  # 'A', 'B', ..., up to needed count
+
+    edges = set()
+
+    # Add a 3-clique: vertices[0], vertices[1], vertices[2]
+    clique3 = vertices[0:3]
+    for edge in combinations(clique3, 2):
+        edges.add(tuple(sorted(edge)))
+
+    # Add a 4-clique: vertices[3], vertices[4], vertices[5], vertices[6]
+    if num_vertices >= 7:
+        clique4 = vertices[3:7]
+        for edge in combinations(clique4, 2):
+            edges.add(tuple(sorted(edge)))
+
+    # Add some sparse edges among remaining vertices to avoid new cliques
+    remaining = vertices[7:]
+    random.seed(42)  # For reproducibility
+    while len(edges) < num_vertices + 5:  # Sparse random edges
+        a, b = random.sample(vertices, 2)
+        edge = tuple(sorted((a, b)))
+        if edge not in edges:
+            edges.add(edge)
+
+    return list(edges)
+
+
 if __name__ == "__main__":
-	g = Graph([(1, 2), (1, 3), (2, 3), (1, 4), (2, 5), (3, 6)])
-	for triple in g.all_triples_naive():
-		print(triple)
+	# Generate 20 graphs for sizes from 6 to 26
+	print("Generating graphs >-<")
+	graphs = {n: generate_graph_with_cliques(n) for n in range(6, 27)}
+	print("Graphs generated. ^w^")
